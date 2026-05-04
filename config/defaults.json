@@ -1,0 +1,136 @@
+{
+  "language": "auto",
+  "orchestrator": {
+    "name": "twistedfate",
+    "runtime": "codex",
+    "model": "gpt-5.5",
+    "effort": "medium"
+  },
+  "outputContract": {
+    "default": "harness/contracts/default.md",
+    "review": "harness/contracts/review.md",
+    "qa": "harness/contracts/qa.md",
+    "planning": "harness/contracts/planning.md",
+    "synthesis": "harness/contracts/synthesis.md",
+    "implementation": "harness/contracts/implementation.md",
+    "retrospective": "harness/contracts/retrospective.md"
+  },
+  "runtimes": {
+    "codex": {
+      "command": "codex",
+      "model": "gpt-5.5",
+      "sandbox": "read-only",
+      "extraArgs": ["--skip-git-repo-check", "--ephemeral"]
+    },
+    "claude": {
+      "command": "claude",
+      "model": "opus",
+      "effort": "xhigh",
+      "permissionMode": "plan"
+    },
+    "gemini": {
+      "command": "gemini",
+      "model": "gemini-2.5-pro",
+      "approvalMode": "plan",
+      "outputFormat": "text"
+    },
+    "ollama": {
+      "command": "ollama",
+      "model": "qwen2.5-coder"
+    }
+  },
+  "agents": {
+    "twistedfate": {
+      "description": "Main orchestrator and synthesizer",
+      "runtime": "codex",
+      "model": "gpt-5.5",
+      "effort": "medium",
+      "rolePrompt": "harness/prompts/twistedfate.md",
+      "contract": "synthesis"
+    },
+    "ryze": {
+      "description": "Product discovery and PRD shaping",
+      "runtime": "claude",
+      "model": "opus",
+      "effort": "xhigh",
+      "rolePrompt": "harness/prompts/ryze.md",
+      "contract": "planning"
+    },
+    "orianna": {
+      "description": "UX decisions, flows, states, and design docs",
+      "runtime": "claude",
+      "model": "opus",
+      "effort": "xhigh",
+      "rolePrompt": "harness/prompts/orianna.md",
+      "contract": "planning"
+    },
+    "hwei": {
+      "description": "Design critique and visual/system-fit review",
+      "runtime": "gemini",
+      "model": "gemini-2.5-pro",
+      "rolePrompt": "harness/prompts/hwei.md",
+      "contract": "review"
+    },
+    "shen": {
+      "description": "Cross-document alignment and decision logging",
+      "runtime": "codex",
+      "model": "gpt-5.5",
+      "effort": "medium",
+      "rolePrompt": "harness/prompts/shen.md",
+      "contract": "review"
+    },
+    "ornn": {
+      "description": "Technical planning and implementation specs",
+      "runtime": "claude",
+      "model": "opusplan",
+      "effort": "high",
+      "rolePrompt": "harness/prompts/ornn.md",
+      "contract": "planning"
+    },
+    "viktor": {
+      "description": "Focused code implementation",
+      "runtime": "codex",
+      "model": "gpt-5.4",
+      "effort": "medium",
+      "rolePrompt": "harness/prompts/viktor.md",
+      "contract": "implementation"
+    },
+    "kayle": {
+      "description": "Strict code and spec review",
+      "runtime": "claude",
+      "model": "opus",
+      "effort": "xhigh",
+      "rolePrompt": "harness/prompts/kayle.md",
+      "contract": "review"
+    },
+    "caitlyn": {
+      "description": "QA verification and evidence gathering",
+      "runtime": "gemini",
+      "model": "gemini-2.5-pro",
+      "rolePrompt": "harness/prompts/caitlyn.md",
+      "contract": "qa"
+    },
+    "zilean": {
+      "description": "Research and official documentation validation",
+      "runtime": "gemini",
+      "model": "gemini-2.5-pro",
+      "rolePrompt": "harness/prompts/zilean.md",
+      "contract": "review"
+    },
+    "bard": {
+      "description": "Retrospective synthesis and improvement extraction",
+      "runtime": "codex",
+      "model": "gpt-5.4-mini",
+      "effort": "medium",
+      "rolePrompt": "harness/prompts/bard.md",
+      "contract": "retrospective"
+    },
+    "local-fast": {
+      "description": "Cheap local draft/check worker when Ollama is available",
+      "runtime": "ollama",
+      "model": "qwen2.5-coder",
+      "rolePrompt": "harness/prompts/local-fast.md",
+      "contract": "default"
+    }
+  }
+}
