@@ -4,7 +4,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { readRelativeFile, withRolePrompt } from "../../src/agents/prompt";
 import { clearDefaultsCache } from "../../src/config";
 import { AgentConfig } from "../../src/types";
-import { getActiveWorkspace, setActiveWorkspace } from "../../src/workspace";
+import {
+  getActiveWorkspace,
+  getPackageRoot,
+  setActiveWorkspace,
+} from "../../src/workspace";
 
 const baseAgent = (overrides: Partial<AgentConfig> = {}): AgentConfig => ({
   description: "",
@@ -40,6 +44,17 @@ describe("readRelativeFile", () => {
     const content = readRelativeFile("README.md");
     expect(content.length).toBeGreaterThan(0);
     expect(content).toBe(content.trim());
+  });
+
+  it("throws when the path escapes the package root", () => {
+    expect(() => readRelativeFile("../package.json")).toThrow(
+      /escapes package root/i,
+    );
+  });
+
+  it("throws when given an absolute path outside the package root", () => {
+    const outside = path.resolve(getPackageRoot(), "..", "package.json");
+    expect(() => readRelativeFile(outside)).toThrow(/escapes package root/i);
   });
 });
 

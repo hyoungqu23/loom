@@ -14,11 +14,37 @@ export function isJsonObject(
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/**
+ * Keys that, when copied through `deepMerge` or walked by `setNestedValue`,
+ * would mutate `Object.prototype` or the prototype chain of a fresh literal.
+ * Treat as injection vectors — JSON parsed from disk or CLI args must not be
+ * able to set them.
+ */
+const FORBIDDEN_PROTO_KEYS: ReadonlySet<string> = new Set([
+  "__proto__",
+  "constructor",
+  "prototype",
+]);
+
+function isForbiddenConfigSegment(key: string): boolean {
+  return FORBIDDEN_PROTO_KEYS.has(key);
+}
+
+function copyJsonObject(source: JsonObject): JsonObject {
+  const target: JsonObject = {};
+  for (const key of Object.keys(source)) {
+    if (isForbiddenConfigSegment(key)) continue;
+    target[key] = source[key];
+  }
+  return target;
+}
+
 /** Recursively merge `override` into `base`. Arrays are replaced, not merged. */
 export function deepMerge(base: JsonObject, override: JsonValue): JsonObject {
-  if (!isJsonObject(override)) return { ...base };
-  const out: JsonObject = { ...base };
+  if (!isJsonObject(override)) return copyJsonObject(base);
+  const out: JsonObject = copyJsonObject(base);
   for (const key of Object.keys(override)) {
+    if (isForbiddenConfigSegment(key)) continue;
     const overrideValue = override[key];
     const baseValue = out[key];
     if (isJsonObject(overrideValue) && isJsonObject(baseValue)) {
@@ -54,10 +80,18 @@ export function getNestedValue(
 ): JsonValue | undefined {
   if (!dottedPath) return object;
   const parts = dottedPath.split(".").filter(Boolean);
+  // Symmetry with setNestedValue: refuse to traverse into prototype-pollution
+  // sentinel keys. Reads can't pollute, but exposing inherited Object.prototype
+  // members via `loom config show __proto__.toString` is surprising and noisy.
+  for (const part of parts) {
+    if (isForbiddenConfigSegment(part)) return undefined;
+  }
   let current: JsonValue = object;
   for (const part of parts) {
     if (!isJsonObject(current)) return undefined;
-    const next: JsonValue | undefined = current[part];
+    const next: JsonValue | undefined = Object.hasOwn(current, part)
+      ? current[part]
+      : undefined;
     if (next === undefined) return undefined;
     current = next;
   }
@@ -73,10 +107,15 @@ export function setNestedValue(
   if (parts.length === 0) {
     throw new Error("Config path is required");
   }
+  for (const part of parts) {
+    if (isForbiddenConfigSegment(part)) {
+      throw new Error(`Forbidden config path segment: ${part}`);
+    }
+  }
   let current: JsonObject = object;
   for (let i = 0; i < parts.length - 1; i += 1) {
     const part = parts[i];
-    const existing = current[part];
+    const existing = Object.hasOwn(current, part) ? current[part] : undefined;
     if (!isJsonObject(existing)) {
       const next: JsonObject = {};
       current[part] = next;

@@ -71,6 +71,12 @@ describe("deepMerge", () => {
   it("replaces object with non-object when override is non-object", () => {
     expect(deepMerge({ a: { x: 1 } }, { a: "raw" })).toEqual({ a: "raw" });
   });
+
+  it("skips forbidden keys from override", () => {
+    const merged = deepMerge({ safe: 1 }, JSON.parse('{"__proto__":{"x":"y"}}'));
+    expect(merged).toEqual({ safe: 1 });
+    expect(({} as { x?: string }).x).toBeUndefined();
+  });
 });
 
 describe("parseConfigValue", () => {
@@ -161,6 +167,30 @@ describe("setNestedValue", () => {
 
   it("throws when path is empty", () => {
     expect(() => setNestedValue({}, "", 1)).toThrow(/required/i);
+  });
+
+  it("throws when any path segment is forbidden", () => {
+    expect(() => setNestedValue({}, "safe.__proto__.polluted", "x")).toThrow(
+      /forbidden config path segment: __proto__/i,
+    );
+    expect(() => setNestedValue({}, "safe.constructor.value", "x")).toThrow(
+      /forbidden config path segment: constructor/i,
+    );
+  });
+
+  it("does not pollute Object.prototype", () => {
+    expect(() => setNestedValue({}, "__proto__.polluted", "x")).toThrow(
+      /forbidden config path segment: __proto__/i,
+    );
+    expect(({} as { polluted?: string }).polluted).toBeUndefined();
+  });
+
+  it("does not walk inherited intermediate objects", () => {
+    const inherited = { a: { inherited: true } };
+    const obj = Object.create(inherited) as JsonObject;
+    setNestedValue(obj, "a.local", 1);
+    expect(obj).toEqual({ a: { local: 1 } });
+    expect(inherited.a).toEqual({ inherited: true });
   });
 });
 

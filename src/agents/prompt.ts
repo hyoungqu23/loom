@@ -9,7 +9,19 @@ const COMMON_PROMPT_RELATIVE = path.join("harness", "prompts", "_common.md");
 
 export function readRelativeFile(relativePath: string): string {
   if (!relativePath) return "";
-  const filePath = path.join(getPackageRoot(), relativePath);
+  const root = getPackageRoot();
+  const filePath = path.resolve(root, relativePath);
+  const relativeToRoot = path.relative(root, filePath);
+  const escapesRoot =
+    relativeToRoot === ".." ||
+    relativeToRoot.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativeToRoot);
+
+  if (escapesRoot) {
+    throw new Error(
+      `Path escapes package root: ${relativePath} -> ${filePath}`,
+    );
+  }
   if (!fs.existsSync(filePath)) return "";
   return fs.readFileSync(filePath, "utf8").trim();
 }
