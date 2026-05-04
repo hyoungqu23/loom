@@ -298,7 +298,13 @@ npx vitest run eval/                      # 구조·휴리스틱 eval만 (결정
 │           ├── plan/
 │           ├── build/
 │           └── ...
-└── runtime-runs/                   # `loom doctor --smoke` 결과
+├── runtime-runs/                   # `loom doctor --smoke` 결과
+├── cron/
+│   ├── jobs.json                   # cron 작업 정의 (직접 편집)
+│   └── runs/                       # 실행마다 stdout/stderr/result.json
+│       └── <timestamp>-<id>/
+└── metrics/
+    └── events.jsonl                # phase / cron 메트릭
 ```
 
 `STATE.md`만 봐도 진행 상황 다 알 수 있게 설계됨. 직접 보고 싶으면:
@@ -306,6 +312,70 @@ npx vitest run eval/                      # 구조·휴리스틱 eval만 (결정
 ```bash
 cat .loom/features/<slug>/STATE.md
 ```
+
+---
+
+## 7.5 Cron 작업
+
+Loom은 `.loom/cron/jobs.json`을 직접 편집해서 정의하는 단순 cron 모델을 쓴다.
+`loom cron list`로 현재 등록된 작업을 보고, `loom cron run <id>`로 즉시 실행한다.
+스케줄러 자체는 외부 cron/launchd/Task Scheduler에 위임하고, Loom은 정의·실행·기록만 담당한다.
+
+### 7.5.1 jobs.json 스키마
+
+```json
+{
+  "jobs": [
+    {
+      "id": "nightly-qa",
+      "command": "npm",
+      "args": ["test"],
+      "schedule": "0 2 * * *",
+      "cwd": "/abs/path/inside/workspace",
+      "feature": "nightly-qa",
+      "enabled": true,
+      "approvalMode": "allow-risky"
+    }
+  ]
+}
+```
+
+| 필드 | 의미 |
+|---|---|
+| `id` | 식별자. `loom cron run <id>`에서 사용. |
+| `command` / `args` | 실제로 spawn할 외부 명령. |
+| `schedule` | 외부 cron 표기. Loom 내부에선 메타데이터로만 다룸. |
+| `cwd` | 워크스페이스 내부 경로여야 함. 밖이면 `escapes workspace` 에러. |
+| `feature` | 어떤 feature 세션과 연관되는지. 표시·필터링용. |
+| `enabled` | `false`면 `loom cron run`이 거부. |
+| `approvalMode` | `"allow-risky"`로 명시해야 `safe`가 아닌 명령(예: `curl`, `cat .env`)이 통과. |
+
+### 7.5.2 실행 결과는 어디에 남나
+
+`loom cron run <id>` 한 번마다 다음이 생긴다.
+
+```text
+.loom/cron/runs/<timestamp>-<id>/
+├── stdout.log     # redact 적용된 표준 출력
+├── stderr.log     # redact 적용된 표준 에러
+└── result.json    # status, signal, command, args, durationMs, startedAt, finishedAt
+```
+
+`stdout.log` / `stderr.log`는 `redactText`로 시크릿 패턴(API 키, GitHub PAT, AWS access key, Bearer 헤더 등)을 자동으로 마스킹한다.
+
+30일 이상 묵은 디렉토리는 다음 cron run 시점에 자동 정리된다.
+
+또한 `.loom/metrics/events.jsonl`에 `{ "type": "cron", "id": "...", "status": ..., "durationMs": ... }` 한 줄이 추가된다.
+
+### 7.5.3 위험 차단 정책
+
+`src/engine/risk.ts`가 `command`를 분류한 결과가 `safe`가 아니면 (`true`, `ls`, `cat` 같은 알려진 안전 명령 외 모든 것) `loom cron run`은 즉시 throw 한다. 이를 통과시키려면 jobs.json 항목에 `"approvalMode": "allow-risky"`를 명시해야 한다 — 의도적인 한 단계의 게이트.
+
+### 7.5.4 자주 묻는 운영 질문
+
+- **새 작업을 어떻게 추가하나** — `.loom/cron/jobs.json`을 직접 편집한다. CLI에 add 서브커맨드는 두지 않는다 (STATE.md / CONTEXT.md / PLAN.md를 사람이 직접 편집하는 모델과 동일).
+- **`loom cron list`가 비어 있다** — `.loom/cron/jobs.json`이 아직 없다. 위 스키마대로 생성하면 된다.
+- **`approvalMode: "allow-risky"`를 매번 쓰기 번거롭다** — 그게 의도다. cron은 무인 실행 경로이므로 한 번의 명시적 승인이 사고 방지의 핵심이다.
 
 ---
 

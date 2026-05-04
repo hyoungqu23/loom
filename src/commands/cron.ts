@@ -8,7 +8,9 @@ export async function runCronCommand(positionals: string[], _flags: Flags): Prom
     const jobs = listCronJobs();
     console.log("Cron Jobs\n");
     if (jobs.length === 0) {
-      console.log("(none configured)");
+      console.log(
+        "(none configured — edit .loom/cron/jobs.json; see docs/USAGE.md#75-cron-작업)",
+      );
       return;
     }
     for (const job of jobs) {

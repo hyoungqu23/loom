@@ -10,7 +10,7 @@ Usage:
   loom skills
   loom memory list | search "<query>" | promote <id> --type user|project|procedure | reject <id>
   loom metrics summary
-  loom cron list | run <id>
+  loom cron list | run <id>          (edit .loom/cron/jobs.json to add jobs)
   loom export trajectory --feature <slug>
   loom phase <discuss|plan|build|review|verify|ship|reflect> "<task>" --feature <slug>
                                [--gate proceed|revise|abort] [--note "<text>"]
