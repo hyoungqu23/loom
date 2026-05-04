@@ -37,4 +37,18 @@ describe("ollamaAdapter.buildSpec", () => {
     const spec = ollamaAdapter.buildSpec(baseArgs());
     expect(spec.cwd).toBe("/tmp/cwd");
   });
+
+  it("throws when the prompt exceeds the argv byte ceiling", () => {
+    const huge = "a".repeat(120_000);
+    expect(() =>
+      ollamaAdapter.buildSpec({ ...baseArgs(), prompt: huge }),
+    ).toThrow(/prompt too large for argv/);
+  });
+
+  it("accepts a prompt right at the byte ceiling", () => {
+    const right = "a".repeat(100_000);
+    expect(() =>
+      ollamaAdapter.buildSpec({ ...baseArgs(), prompt: right }),
+    ).not.toThrow();
+  });
 });
