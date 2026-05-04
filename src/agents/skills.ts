@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { AgentConfig, InstalledSkill, SkillMetadata } from "../types";
 import { getPackageRoot } from "../workspace";
+import { workspaceRoot } from "../workspace";
 
 const SKILLS_DIR_REL = path.join(".agents", "skills");
 
@@ -156,4 +157,58 @@ export function skillContext(
     }
   }
   return lines.join("\n");
+}
+
+function slugifySkill(text: string): string {
+  return (
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || "reflected-procedure"
+  );
+}
+
+function skillDraft(name: string, procedure: string, source: string): string {
+  return [
+    "---",
+    `name: ${name}`,
+    `description: Candidate skill drafted from Loom reflect phase: ${procedure.slice(0, 96)}`,
+    "---",
+    "",
+    `# ${name}`,
+    "",
+    "## When To Use",
+    "",
+    `Use this when a future task matches this reflected procedure from ${source}.`,
+    "",
+    "## Steps",
+    "",
+    `- ${procedure}`,
+    "",
+    "## Verification",
+    "",
+    "- Confirm the procedure's stated checks pass.",
+    "- Inspect the resulting diff or artefact before promoting this skill.",
+    "",
+    "## Failure Recovery",
+    "",
+    "- Stop using this candidate if the procedure is ambiguous or causes failures.",
+    "- Revise the steps with concrete commands and rerun the relevant tests.",
+    "",
+  ].join("\n");
+}
+
+export function writeSkillCandidate(procedure: string, source: string): string | null {
+  const body = procedure.trim();
+  if (!body) return null;
+  const root = path.join(workspaceRoot(), "skills", "candidates");
+  fs.mkdirSync(root, { recursive: true });
+  const name = slugifySkill(body);
+  const dir = path.join(root, name);
+  const filePath = path.join(dir, "SKILL.md");
+  if (fs.existsSync(filePath)) return null;
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(filePath, skillDraft(name, body, source), "utf8");
+  return filePath;
 }

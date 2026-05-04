@@ -268,4 +268,43 @@ GraphQL 게이트웨이 도입.
     expect(bodies.join("\n")).toContain("kind: user");
     expect(bodies.join("\n")).toContain("Always respond in Korean.");
   });
+
+  it("writes one skill candidate draft from reusable reflect procedure", async () => {
+    stubBin = writeStub(`
+## 재사용 절차
+- Before committing, run npm run check and npm run test, then inspect git status.
+`.trim());
+    saveWorkspaceConfig({
+      runtimes: {
+        codex: { command: stubBin, extraArgs: [] },
+        claude: { command: stubBin, extraArgs: [] },
+        gemini: { command: stubBin, extraArgs: [] },
+        ollama: { command: stubBin, extraArgs: [] },
+      },
+    });
+    clearDefaultsCache();
+
+    const dir = createPhaseSession("skill-candidate");
+    await captureConsole([], async () => {
+      await runPhase(dir, "reflect", {
+        task: "x",
+        flags: {},
+        synthesize: false,
+      });
+    });
+
+    const candidatesRoot = path.join(tmp, "skills", "candidates");
+    const dirs = fs.readdirSync(candidatesRoot);
+    expect(dirs.length).toBe(1);
+    const skill = fs.readFileSync(
+      path.join(candidatesRoot, dirs[0], "SKILL.md"),
+      "utf8",
+    );
+    expect(skill).toContain("description:");
+    expect(skill).toContain("## When To Use");
+    expect(skill).toContain("## Steps");
+    expect(skill).toContain("## Verification");
+    expect(skill).toContain("## Failure Recovery");
+    expect(skill).toContain("npm run check");
+  });
 });

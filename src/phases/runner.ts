@@ -34,6 +34,7 @@ import {
   mergePlan,
 } from "./extract";
 import { writeMemoryCandidates } from "../memory/store";
+import { writeSkillCandidate } from "../agents/skills";
 
 export type PhaseRunOptions = {
   task: string;
@@ -162,6 +163,11 @@ function autoExtractMemoryCandidates(
   const written = writeMemoryCandidates(candidates);
   if (written.length > 0) {
     driver.log(`[loom] ${written.length} memory candidate(s) written`);
+  }
+  const procedure = candidates.find((candidate) => candidate.kind === "procedure");
+  if (procedure) {
+    const skillPath = writeSkillCandidate(procedure.body, procedure.source);
+    if (skillPath) driver.log(`[loom] skill candidate written: ${skillPath}`);
   }
 }
 
