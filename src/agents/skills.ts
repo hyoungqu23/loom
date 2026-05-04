@@ -175,13 +175,17 @@ export function selectedSkillNames(
 }
 
 function slugifySkill(text: string): string {
-  return (
+  const slug =
     text
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/[^a-z0-9가-힣]+/g, "-")
       .replace(/^-+|-+$/g, "")
-      .slice(0, 48) || "reflected-procedure"
-  );
+      .slice(0, 48) || "reflected-procedure";
+  let hash = 0;
+  for (const char of text) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+  return `${slug}-${hash.toString(36).slice(0, 6)}`;
 }
 
 function skillDraft(name: string, procedure: string, source: string): string {

@@ -8,8 +8,13 @@ import {
   relevantSkillNames,
   skillCatalog,
   skillContext,
+  writeSkillCandidate,
 } from "../../src/agents/skills";
 import { AgentConfig } from "../../src/types";
+import {
+  getActiveWorkspace,
+  setActiveWorkspace,
+} from "../../src/workspace";
 
 const baseAgent = (overrides: Partial<AgentConfig> = {}): AgentConfig => ({
   description: "",
@@ -19,12 +24,16 @@ const baseAgent = (overrides: Partial<AgentConfig> = {}): AgentConfig => ({
 });
 
 let tmp: string;
+let originalWorkspace: string;
 
 beforeEach(() => {
+  originalWorkspace = getActiveWorkspace();
   tmp = fs.mkdtempSync(path.join(os.tmpdir(), "loom-skills-test-"));
+  setActiveWorkspace(tmp);
 });
 
 afterEach(() => {
+  setActiveWorkspace(originalWorkspace);
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
@@ -169,5 +178,18 @@ describe("skillContext", () => {
       const bullets = out.match(/^\- /gm) ?? [];
       expect(bullets.length).toBeLessThanOrEqual(5);
     }
+  });
+});
+
+describe("writeSkillCandidate", () => {
+  it("preserves Korean procedure slugs and avoids collisions", () => {
+    const first = writeSkillCandidate("커밋 전에 npm run check 실행", "reflect:a");
+    const second = writeSkillCandidate("커밋 전에 npm run test 실행", "reflect:b");
+
+    expect(first).toContain("커밋-전에");
+    expect(second).toContain("커밋-전에");
+    expect(first).not.toBe(second);
+    expect(fs.existsSync(first as string)).toBe(true);
+    expect(fs.existsSync(second as string)).toBe(true);
   });
 });
