@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { loadState, resolvePhaseSession } from "../phases/session";
+import { loadMetricEvents, MetricEvent } from "../metrics/events";
 import { PhaseState } from "../types";
 
 export type TrajectoryExport = {
@@ -16,6 +17,7 @@ export type TrajectoryExport = {
     file: string;
     body: string;
   }>;
+  metrics: MetricEvent[];
 };
 
 const SECRET_PATTERNS: RegExp[] = [
@@ -69,5 +71,6 @@ export function exportTrajectory(feature: string): TrajectoryExport {
       plan: readOptional(path.join(sessionDir, "PLAN.md")),
     },
     workerOutputs: collectWorkerOutputs(sessionDir),
+    metrics: loadMetricEvents().filter((event) => event.feature === state.feature),
   };
 }

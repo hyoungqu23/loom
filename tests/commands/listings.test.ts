@@ -3,7 +3,8 @@ import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { captureConsole } from "../../src/util/capture";
-import { printAgents, printInstalledSkills } from "../../src/commands/listings";
+import { printAgents, printInstalledSkills, runSkillsCommand } from "../../src/commands/listings";
+import { appendMetricEvent } from "../../src/metrics/events";
 import { clearDefaultsCache, saveWorkspaceConfig } from "../../src/config";
 import {
   ensureWorkspaceState,
@@ -85,5 +86,27 @@ describe("printInstalledSkills", () => {
     const text = buf.join("\n");
     expect(text.startsWith("Skills")).toBe(true);
     expect(text.length).toBeGreaterThan("Skills\n".length);
+  });
+});
+
+describe("runSkillsCommand", () => {
+  it("prints review-needed skills from failed metric events", async () => {
+    appendMetricEvent({
+      type: "phase",
+      feature: "auth",
+      phase: "verify",
+      durationMs: 5,
+      workerCount: 1,
+      failedCount: 1,
+      skills: ["test-driven-development"],
+    });
+
+    const buf: string[] = [];
+    await captureConsole(buf, () => runSkillsCommand(["review"]));
+
+    const text = buf.join("\n");
+    expect(text).toContain("Skills Review");
+    expect(text).toContain("test-driven-development");
+    expect(text).toContain("failures=1");
   });
 });

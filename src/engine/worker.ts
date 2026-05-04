@@ -9,6 +9,7 @@ import {
 } from "../types";
 import { loadAgent } from "../agents/load";
 import { withRolePrompt, WithRolePromptOptions } from "../agents/prompt";
+import { selectedSkillNames } from "../agents/skills";
 import { buildRuntimeCommand } from "../runtimes";
 import { writeJson } from "../util/json";
 import { flagNumber, flagString } from "../util/parse-args";
@@ -31,6 +32,7 @@ export function resolveAgentRun(
 ): AgentRun {
   const agent = loadAgent(agentName);
   const prompt = withRolePrompt(task, agent, agentName, promptOptions);
+  const relevantSkills = selectedSkillNames(agentName, agent, task);
   const options: RunOptions = {
     cwd: flagString(flags.cwd) || undefined,
     model: flagString(flags.model) || agent.model,
@@ -43,7 +45,7 @@ export function resolveAgentRun(
     timeoutMs: flagNumber(flags.timeout, 0) || flagNumber(flags.timeoutMs, 0) || undefined,
   };
   const spec = buildRuntimeCommand(agent.runtime, prompt, options);
-  return { agentName, agent, prompt, options, spec };
+  return { agentName, agent, prompt, relevantSkills, options, spec };
 }
 
 export async function runWorkerAsync(
@@ -64,6 +66,7 @@ export async function runWorkerAsync(
     command: worker.spec.command,
     args: worker.spec.args,
     commandRisk,
+    relevantSkills: worker.relevantSkills || [],
     stdinPreview: worker.spec.stdin ? worker.spec.stdin.slice(0, 1200) : null,
     cwd: worker.spec.cwd,
     startedAt: new Date().toISOString(),

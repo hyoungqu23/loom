@@ -129,22 +129,20 @@ export function skillContext(
   agent: AgentConfig,
   task: string,
 ): string {
-  const catalog = skillCatalog();
-  if (catalog.length === 0) return "";
-
-  const wanted = new Set(relevantSkillNames(agentName, agent, task));
-  const selected: SkillMetadata[] = [];
-  for (const skill of catalog) {
-    if (wanted.has(skill.name)) selected.push(skill);
-    if (selected.length >= 5) break;
-  }
+  const selected = selectedSkillNames(agentName, agent, task);
   if (selected.length === 0) return "";
+
+  const byName = new Map(skillCatalog().map((skill) => [skill.name, skill]));
+  const selectedMetadata = selected
+    .map((name) => byName.get(name))
+    .filter((skill): skill is SkillMetadata => Boolean(skill));
+  if (selectedMetadata.length === 0) return "";
 
   const lines: string[] = [
     "# Relevant Loom Skills",
     "Use these project skills as operating guidance when they apply. Their source files are available on disk.",
   ];
-  for (const skill of selected) {
+  for (const skill of selectedMetadata) {
     lines.push("");
     lines.push(`- ${skill.name}`);
     lines.push(`  path: ${skill.path}`);
@@ -157,6 +155,23 @@ export function skillContext(
     }
   }
   return lines.join("\n");
+}
+
+export function selectedSkillNames(
+  agentName: string,
+  agent: AgentConfig,
+  task: string,
+): string[] {
+  const catalog = skillCatalog();
+  if (catalog.length === 0) return [];
+
+  const wanted = new Set(relevantSkillNames(agentName, agent, task));
+  const selected: string[] = [];
+  for (const skill of catalog) {
+    if (wanted.has(skill.name)) selected.push(skill.name);
+    if (selected.length >= 5) break;
+  }
+  return selected;
 }
 
 function slugifySkill(text: string): string {

@@ -15,6 +15,7 @@ import {
   getActiveWorkspace,
   setActiveWorkspace,
 } from "../../src/workspace";
+import { appendMetricEvent } from "../../src/metrics/events";
 
 let tmp: string;
 let originalWorkspace: string;
@@ -55,6 +56,15 @@ describe("exportTrajectory", () => {
       at: "2026-05-04T00:00:00.000Z",
     });
     writeState(dir, state);
+    appendMetricEvent({
+      type: "phase",
+      feature: "auth-tokens",
+      phase: "plan",
+      durationMs: 10,
+      workerCount: 1,
+      failedCount: 1,
+      skills: ["test-driven-development"],
+    });
 
     const trajectory = exportTrajectory("auth-tokens");
 
@@ -63,6 +73,7 @@ describe("exportTrajectory", () => {
     expect(trajectory.artifacts.context).toContain("Token refresh is flaky.");
     expect(trajectory.workerOutputs[0].phase).toBe("plan");
     expect(trajectory.workerOutputs[0].body).toContain("[REDACTED]");
+    expect(trajectory.metrics[0].skills).toContain("test-driven-development");
     expect(JSON.stringify(trajectory)).not.toContain("SECRET_TOKEN=abc");
   });
 });

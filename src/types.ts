@@ -77,6 +77,7 @@ export type AgentRun = {
   agentName: string;
   agent: AgentConfig;
   prompt: string;
+  relevantSkills?: string[];
   options: RunOptions;
   spec: RuntimeSpec;
 };

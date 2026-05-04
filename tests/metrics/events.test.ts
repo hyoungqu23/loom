@@ -39,6 +39,7 @@ describe("metrics events", () => {
       workerCount: 1,
       failedCount: 0,
       gateDecision: "proceed",
+      skills: ["test-driven-development"],
     });
 
     expect(fs.existsSync(metricsEventsPath())).toBe(true);
@@ -50,6 +51,7 @@ describe("metrics events", () => {
         phase: "plan",
         durationMs: 12,
         workerCount: 1,
+        skills: ["test-driven-development"],
       }),
     ]);
   });

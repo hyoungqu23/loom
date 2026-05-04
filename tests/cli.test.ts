@@ -61,6 +61,12 @@ describe("main", () => {
     expect(buf.join("\n")).toMatch(/Skills/);
   });
 
+  it("dispatches to skills review", async () => {
+    const buf: string[] = [];
+    await captureConsole(buf, () => main(["skills", "review"]));
+    expect(buf.join("\n")).toMatch(/Skills Review/);
+  });
+
   it("dispatches to memory command", async () => {
     const buf: string[] = [];
     await captureConsole(buf, () => main(["memory", "list"]));

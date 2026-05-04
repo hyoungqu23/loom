@@ -64,6 +64,17 @@ describe("runWorkerAsync", () => {
     expect(request.commandRisk.categories).toEqual([]);
   });
 
+  it("records relevant skill names in request.json", async () => {
+    const worker = resolveAgentRun("twistedfate", "test failing workflow", { cwd: tmp });
+    const out = path.join(tmp, "wout");
+    await runWorkerAsync(worker, out);
+
+    const request = JSON.parse(
+      fs.readFileSync(path.join(out, "request.json"), "utf8"),
+    );
+    expect(request.relevantSkills).toContain("test-driven-development");
+  });
+
   it("blocks high-risk commands unless explicitly approved", async () => {
     fs.writeFileSync(path.join(tmp, ".env"), "SECRET_TOKEN=abc\n", "utf8");
     const worker: AgentRun = {

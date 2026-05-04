@@ -7,7 +7,7 @@ import { runConfigCommand } from "./commands/config";
 import { runDoctor } from "./commands/doctor";
 import { runPhaseCommand } from "./commands/phase";
 import { runAutopilot } from "./commands/autopilot";
-import { printAgents, printInstalledSkills } from "./commands/listings";
+import { printAgents, runSkillsCommand } from "./commands/listings";
 import { printHelp } from "./commands/help";
 import { runMemoryCommand } from "./commands/memory";
 import { runMetricsCommand } from "./commands/metrics";
@@ -36,8 +36,8 @@ const HANDLERS: { [key: string]: Handler } = {
   autopilot: async (positionals, flags) => {
     await runAutopilot(positionals.slice(1), flags);
   },
-  skills: () => {
-    printInstalledSkills();
+  skills: (positionals) => {
+    runSkillsCommand(positionals.slice(1));
   },
   memory: (positionals, flags) => {
     runMemoryCommand(positionals.slice(1), flags);

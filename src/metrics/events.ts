@@ -11,7 +11,14 @@ export type MetricEvent = {
   workerCount: number;
   failedCount: number;
   gateDecision?: GateDecision;
+  skills?: string[];
   at?: string;
+};
+
+export type SkillReviewSummary = {
+  skill: string;
+  failures: number;
+  features: string[];
 };
 
 export type MetricsSummary = {
@@ -65,5 +72,24 @@ export function summarizeMetrics(): MetricsSummary[] {
   }
   return [...byFeature.values()].sort((a, b) =>
     a.feature.localeCompare(b.feature),
+  );
+}
+
+export function summarizeSkillReview(): SkillReviewSummary[] {
+  const bySkill = new Map<string, SkillReviewSummary>();
+  for (const event of loadMetricEvents()) {
+    if (event.type !== "phase" || event.failedCount <= 0) continue;
+    for (const skill of event.skills || []) {
+      const current =
+        bySkill.get(skill) ?? { skill, failures: 0, features: [] };
+      current.failures += event.failedCount;
+      if (!current.features.includes(event.feature)) {
+        current.features.push(event.feature);
+      }
+      bySkill.set(skill, current);
+    }
+  }
+  return [...bySkill.values()].sort(
+    (a, b) => b.failures - a.failures || a.skill.localeCompare(b.skill),
   );
 }

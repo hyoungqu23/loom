@@ -357,6 +357,7 @@ export async function runPhase(
       durationMs: Date.now() - phaseStartedAt,
       workerCount: workers.length,
       failedCount,
+      skills: [...new Set(runs.flatMap((run) => run.relevantSkills || []))],
     });
 
     return {
