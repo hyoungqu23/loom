@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import * as readline from "readline";
 import {
   Flags,
   GateDecision,
@@ -17,6 +16,8 @@ import {
 } from "../phases/session";
 import { runPhase } from "../phases/runner";
 import { inferStartPhase } from "../phases/start-phase";
+import { createGateProvider, createRenderer, type FrameDriver } from "../tui";
+import { detectColorMode, detectFrameEnabled } from "../tui/isTty";
 
 const PHASE_SET = new Set<string>(LOOM_PHASES);
 
@@ -57,38 +58,13 @@ function nextPhase(current: LoomPhase): LoomPhase | null {
   return LOOM_PHASES[idx + 1];
 }
 
-function defaultInteractiveGate(): GateProvider {
-  return async (ctx) => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-    try {
-      console.log("");
-      console.log(`────────────────────────────────────────────`);
-      console.log(`Phase complete: ${ctx.phase}  (workers=${ctx.workersCount})`);
-      if (ctx.synthesisExcerpt) {
-        console.log(`Synthesis preview:`);
-        console.log(ctx.synthesisExcerpt.slice(0, 600));
-      }
-      const answer: string = await new Promise((resolve) => {
-        rl.question(
-          "Gate decision [proceed/revise/abort] (default proceed): ",
-          (ans) => resolve(ans.trim()),
-        );
-      });
-      const normalized = answer.toLowerCase();
-      if (normalized === "revise" || normalized === "r") {
-        return { decision: "revise" };
-      }
-      if (normalized === "abort" || normalized === "a") {
-        return { decision: "abort" };
-      }
-      return { decision: "proceed" };
-    } finally {
-      rl.close();
-    }
-  };
+function defaultInteractiveGate(driver: FrameDriver): GateProvider {
+  const ttyEnv = { isTTY: Boolean(process.stdout.isTTY), env: process.env };
+  return createGateProvider({
+    driver,
+    colorMode: detectColorMode(ttyEnv),
+    asciiOnly: !detectFrameEnabled(ttyEnv),
+  });
 }
 
 function recordGate(
@@ -155,6 +131,12 @@ export async function runAutopilot(
     sessionDir = createPhaseSession(feature);
   }
 
+  // One renderer drives the whole autopilot run — all phases share the
+  // same frame so completed phases get pinned as ✓ rows above the
+  // currently active one. The renderer auto-detects TTY and falls back
+  // to identical pre-TUI [loom] log lines when stdout isn't a terminal.
+  const driver = createRenderer(process.stdout, { feature });
+
   // Decide start phase: explicit --start beats inference.
   let phase: LoomPhase;
   if (startFlag) {
@@ -163,69 +145,74 @@ export async function runAutopilot(
     const handoff = buildHandoff(sessionDir, "discuss");
     const decision = inferStartPhase(task, handoff);
     phase = decision.phase;
-    console.log(
+    driver.log(
       `[loom] autopilot start phase: ${phase} (${decision.confidence})${
         decision.note ? ` — ${decision.note}` : ""
       }`,
     );
   }
 
-  const gate = opts.gateProvider ?? defaultInteractiveGate();
+  const gate = opts.gateProvider ?? defaultInteractiveGate(driver);
   const phasesRun: LoomPhase[] = [];
   let endReason: "abort" | "end-flag" | "completed" = "completed";
 
-  while (true) {
-    const result = await runPhase(sessionDir, phase, {
-      task,
-      flags,
-      synthesize,
-    });
-    phasesRun.push(phase);
+  try {
+    while (true) {
+      const result = await runPhase(sessionDir, phase, {
+        task,
+        flags,
+        synthesize,
+        driver,
+      });
+      phasesRun.push(phase);
 
-    let synthesisExcerpt = "";
-    if (result.synthesisPath) {
-      try {
-        synthesisExcerpt = fs
-          .readFileSync(result.synthesisPath, "utf8")
-          .slice(0, 1200);
-      } catch {
-        synthesisExcerpt = "";
+      let synthesisExcerpt = "";
+      if (result.synthesisPath) {
+        try {
+          synthesisExcerpt = fs
+            .readFileSync(result.synthesisPath, "utf8")
+            .slice(0, 1200);
+        } catch {
+          synthesisExcerpt = "";
+        }
       }
+
+      const outcome = await gate({
+        phase,
+        workersCount: result.workers.length,
+        synthesisExcerpt,
+      });
+      recordGate(sessionDir, phase, outcome);
+
+      if (outcome.decision === "abort") {
+        endReason = "abort";
+        break;
+      }
+      if (outcome.decision === "revise") {
+        // Re-run the same phase with the same task. The user is expected
+        // to update CONTEXT.md / PLAN.md / etc. between invocations if
+        // they want different output.
+        continue;
+      }
+      // proceed
+      if (phase === endPhase) {
+        endReason = "end-flag";
+        break;
+      }
+      const next = nextPhase(phase);
+      if (!next) {
+        endReason = "completed";
+        break;
+      }
+      phase = next;
     }
 
-    const outcome = await gate({
-      phase,
-      workersCount: result.workers.length,
-      synthesisExcerpt,
-    });
-    recordGate(sessionDir, phase, outcome);
-
-    if (outcome.decision === "abort") {
-      endReason = "abort";
-      break;
-    }
-    if (outcome.decision === "revise") {
-      // Re-run the same phase with the same task. The user is expected
-      // to update CONTEXT.md / PLAN.md / etc. between invocations if
-      // they want different output.
-      continue;
-    }
-    // proceed
-    if (phase === endPhase) {
-      endReason = "end-flag";
-      break;
-    }
-    const next = nextPhase(phase);
-    if (!next) {
-      endReason = "completed";
-      break;
-    }
-    phase = next;
+    driver.log(
+      `[loom] autopilot done — ran ${phasesRun.length} phase(s), ended at ${phase} (${endReason})`,
+    );
+  } finally {
+    driver.shutdown();
   }
-
-  console.log(
-    `[loom] autopilot done — ran ${phasesRun.length} phase(s), ended at ${phase} (${endReason})`,
-  );
 
   return {
     sessionDir,

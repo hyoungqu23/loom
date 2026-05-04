@@ -12,6 +12,7 @@ import {
 } from "../types";
 import { resolveAgentRun, runWorkerAsync } from "../engine/worker";
 import { flagBool, flagString } from "../util/parse-args";
+import { createRenderer, type FrameDriver } from "../tui";
 import {
   appendWorkerOutput,
   buildHandoff,
@@ -40,6 +41,13 @@ export type PhaseRunOptions = {
   personas?: string[];
   /** Run synthesizer (twistedfate) over phase outputs. */
   synthesize?: boolean;
+  /**
+   * Caller-managed TUI driver. When provided, runPhase uses it for
+   * progress events and does NOT shutdown — caller owns lifecycle.
+   * When omitted, an ephemeral driver is constructed (TTY-aware) and
+   * shut down before runPhase returns.
+   */
+  driver?: FrameDriver;
 };
 
 export type PhaseRunResult = {
@@ -97,6 +105,7 @@ function summarizeWorkersForSynthesis(
 function autoExtractContext(
   sessionDir: string,
   workers: WorkerResult[],
+  driver: FrameDriver,
 ): void {
   let ctx = loadContext(sessionDir);
   let touched = false;
@@ -108,13 +117,14 @@ function autoExtractContext(
   }
   if (touched && ctx) {
     writeContext(sessionDir, ctx);
-    console.log(`[loom] CONTEXT.md updated from ${workers.length} worker(s)`);
+    driver.log(`[loom] CONTEXT.md updated from ${workers.length} worker(s)`);
   }
 }
 
 function autoExtractPlan(
   sessionDir: string,
   workers: WorkerResult[],
+  driver: FrameDriver,
 ): void {
   let plan = loadPlan(sessionDir);
   let touched = false;
@@ -126,7 +136,7 @@ function autoExtractPlan(
   }
   if (touched && plan) {
     writePlan(sessionDir, plan);
-    console.log(`[loom] PLAN.md updated from ${workers.length} worker(s)`);
+    driver.log(`[loom] PLAN.md updated from ${workers.length} worker(s)`);
   }
 }
 
@@ -155,6 +165,13 @@ export async function runPhase(
   const dryRun = flagBool(options.flags["dry-run"]);
   const shouldSynthesize = options.synthesize ?? !dryRun;
 
+  // Caller-managed driver wins; otherwise build an ephemeral one based on the
+  // current TTY. Ephemeral driver is shut down before we return so timers stop.
+  const ownsDriver = !options.driver;
+  const driver: FrameDriver =
+    options.driver ??
+    createRenderer(process.stdout, { feature: path.basename(sessionDir) });
+
   if (dryRun) {
     const handoff = buildHandoff(sessionDir, phase);
     for (const persona of personas) {
@@ -165,10 +182,11 @@ export async function runPhase(
         { phase, handoff },
       );
       const stdinHint = run.spec.stdin ? " <prompt via stdin>" : "";
-      console.log(
+      driver.log(
         `${persona}: ${run.spec.command} ${run.spec.args.join(" ")}${stdinHint}`,
       );
     }
+    if (ownsDriver) driver.shutdown();
     return {
       sessionDir,
       phase,
@@ -178,110 +196,135 @@ export async function runPhase(
     };
   }
 
-  // Build handoff BEFORE advancing state so the running phase can
-  // see prior outputs as "previous" rather than "current".
-  const handoff: PhaseHandoff = buildHandoff(sessionDir, phase);
+  try {
+    // Build handoff BEFORE advancing state so the running phase can
+    // see prior outputs as "previous" rather than "current".
+    const handoff: PhaseHandoff = buildHandoff(sessionDir, phase);
+    const phaseStartedAt = Date.now();
 
-  console.log(`[loom] phase: ${phase}  personas: ${personas.join(", ")}`);
+    driver.startPhase(phase, personas);
 
-  const runs: AgentRun[] = personas.map((persona) =>
-    resolveAgentRun(persona, options.task, options.flags, { phase, handoff }),
-  );
+    const runs: AgentRun[] = personas.map((persona) =>
+      resolveAgentRun(persona, options.task, options.flags, { phase, handoff }),
+    );
 
-  // Use allSettled so a worker that throws before/after spawn (e.g. a
-  // mkdir failure on a read-only mount, or a runtime that exits with an
-  // unhandled error) doesn't kill the rest of the phase. Spawn-level
-  // failures are already caught inside runSpec; this guards the surrounding
-  // I/O. Rejected runs are surfaced to the user and excluded from synthesis.
-  const settled = await Promise.allSettled(
-    runs.map((run) => {
-      const outputDir = path.join(
+    // Wrap caller hooks so worker stdout deltas feed the live frame.
+    const wrappedHooks: TeamHooks = {
+      ...options.hooks,
+      onWorkerData: (worker, stream, text) => {
+        if (stream === "stdout") {
+          driver.workerProgress(worker.agentName, Buffer.byteLength(text));
+        }
+        options.hooks?.onWorkerData?.(worker, stream, text);
+      },
+    };
+
+    // Use allSettled so a worker that throws before/after spawn (e.g. a
+    // mkdir failure on a read-only mount, or a runtime that exits with an
+    // unhandled error) doesn't kill the rest of the phase. Spawn-level
+    // failures are already caught inside runSpec; this guards the surrounding
+    // I/O. Rejected runs are surfaced to the user and excluded from synthesis.
+    const settled = await Promise.allSettled(
+      runs.map((run) => {
+        const outputDir = path.join(
+          sessionDir,
+          "workers",
+          phase,
+          `${run.agentName}.run`,
+        );
+        return runWorkerAsync(run, outputDir, wrappedHooks);
+      }),
+    );
+
+    const workers: WorkerResult[] = [];
+    let failedCount = 0;
+    for (let i = 0; i < settled.length; i += 1) {
+      const outcome = settled[i];
+      const run = runs[i];
+      if (outcome.status === "fulfilled") {
+        workers.push(outcome.value);
+        continue;
+      }
+      failedCount += 1;
+      const reason =
+        outcome.reason instanceof Error
+          ? outcome.reason.stack || outcome.reason.message
+          : String(outcome.reason);
+      driver.workerError(run.agentName, reason);
+      appendWorkerOutput(
         sessionDir,
-        "workers",
         phase,
-        `${run.agentName}.run`,
+        run.agentName,
+        `(worker rejected before completion)\n\n${reason}`,
       );
-      return runWorkerAsync(run, outputDir, options.hooks ?? {});
-    }),
-  );
-
-  const workers: WorkerResult[] = [];
-  for (let i = 0; i < settled.length; i += 1) {
-    const outcome = settled[i];
-    const run = runs[i];
-    if (outcome.status === "fulfilled") {
-      workers.push(outcome.value);
-      continue;
     }
-    const reason =
-      outcome.reason instanceof Error
-        ? outcome.reason.stack || outcome.reason.message
-        : String(outcome.reason);
-    console.log(`[loom] error ${run.agentName} ${reason.split("\n")[0]}`);
-    appendWorkerOutput(
+
+    let totalOutBytes = 0;
+    for (const result of workers) {
+      appendWorkerOutput(
+        sessionDir,
+        phase,
+        result.agentName,
+        result.stdout || "(no output)",
+      );
+      totalOutBytes += Buffer.byteLength(result.stdout || "");
+      if (result.status !== 0) failedCount += 1;
+      driver.workerDone(result.agentName, result.status, result.signal);
+    }
+
+    // Auto-extract structured artefacts from worker output. The discuss
+    // phase produces CONTEXT.md; the plan phase produces PLAN.md. We merge
+    // (never overwrite) so user-edited fields survive across runs.
+    if (phase === "discuss") {
+      autoExtractContext(sessionDir, workers, driver);
+    } else if (phase === "plan") {
+      autoExtractPlan(sessionDir, workers, driver);
+    }
+
+    const stateAfter = advanceState(sessionDir, phase);
+
+    let synthesisPath: string | null = null;
+    if (shouldSynthesize && workers.length > 0) {
+      const synthName = flagString(options.flags.synthesizer, "twistedfate");
+      const synthTask = [
+        `Synthesize the ${phase} phase outputs for the user.`,
+        "Lead with the recommendation, list disagreements, then next-action checklist.",
+        "",
+        "# Original Task",
+        options.task,
+        "",
+        "# Phase Outputs",
+        summarizeWorkersForSynthesis(workers, phase),
+      ].join("\n");
+      const synthRun = resolveAgentRun(
+        synthName,
+        synthTask,
+        { ...options.flags, model: undefined },
+        { phase, handoff },
+      );
+      const synthDir = path.join(sessionDir, "workers", phase, "synthesis.run");
+      const synth = await runWorkerAsync(synthRun, synthDir, options.hooks ?? {});
+      synthesisPath = path.join(sessionDir, "workers", phase, "synthesis.md");
+      fs.writeFileSync(synthesisPath, synth.stdout || "");
+      const signalSuffix = synth.signal ? ` signal=${synth.signal}` : "";
+      driver.log(`[loom] synthesis status=${synth.status}${signalSuffix}`);
+    }
+
+    driver.endPhase(phase, {
+      workers: workers.length,
+      outBytes: totalOutBytes,
+      elapsedMs: Date.now() - phaseStartedAt,
+      failed: failedCount,
+    });
+
+    return {
       sessionDir,
       phase,
-      run.agentName,
-      `(worker rejected before completion)\n\n${reason}`,
-    );
+      workers,
+      synthesisPath,
+      stateAfter,
+    };
+  } finally {
+    if (ownsDriver) driver.shutdown();
   }
-
-  for (const result of workers) {
-    appendWorkerOutput(
-      sessionDir,
-      phase,
-      result.agentName,
-      result.stdout || "(no output)",
-    );
-    const signalSuffix = result.signal ? ` signal=${result.signal}` : "";
-    console.log(
-      `[loom] done  ${result.agentName} status=${result.status}${signalSuffix}`,
-    );
-  }
-
-  // Auto-extract structured artefacts from worker output. The discuss
-  // phase produces CONTEXT.md; the plan phase produces PLAN.md. We merge
-  // (never overwrite) so user-edited fields survive across runs.
-  if (phase === "discuss") {
-    autoExtractContext(sessionDir, workers);
-  } else if (phase === "plan") {
-    autoExtractPlan(sessionDir, workers);
-  }
-
-  const stateAfter = advanceState(sessionDir, phase);
-
-  let synthesisPath: string | null = null;
-  if (shouldSynthesize && workers.length > 0) {
-    const synthName = flagString(options.flags.synthesizer, "twistedfate");
-    const synthTask = [
-      `Synthesize the ${phase} phase outputs for the user.`,
-      "Lead with the recommendation, list disagreements, then next-action checklist.",
-      "",
-      "# Original Task",
-      options.task,
-      "",
-      "# Phase Outputs",
-      summarizeWorkersForSynthesis(workers, phase),
-    ].join("\n");
-    const synthRun = resolveAgentRun(
-      synthName,
-      synthTask,
-      { ...options.flags, model: undefined },
-      { phase, handoff },
-    );
-    const synthDir = path.join(sessionDir, "workers", phase, "synthesis.run");
-    const synth = await runWorkerAsync(synthRun, synthDir, options.hooks ?? {});
-    synthesisPath = path.join(sessionDir, "workers", phase, "synthesis.md");
-    fs.writeFileSync(synthesisPath, synth.stdout || "");
-    const signalSuffix = synth.signal ? ` signal=${synth.signal}` : "";
-    console.log(`[loom] synthesis status=${synth.status}${signalSuffix}`);
-  }
-
-  return {
-    sessionDir,
-    phase,
-    workers,
-    synthesisPath,
-    stateAfter,
-  };
 }

@@ -5,6 +5,8 @@ import { runtimeVersion } from "../runtimes";
 import { runRuntime } from "../engine";
 import { workspaceRoot } from "../workspace";
 import { flagBool, flagNumber, flagString } from "../util/parse-args";
+import { createAnsi } from "../tui/ansi";
+import { detectColorMode } from "../tui/isTty";
 
 function smokePrompt(runtime: string): string {
   return `Return exactly: LOOM_WORKER_OK_${runtime.toUpperCase()}`;
@@ -19,19 +21,28 @@ export async function runDoctor(flags: Flags): Promise<void> {
   const smoke = flagBool(flags.smoke);
   const timeoutMs = flagNumber(flags.timeout, 60_000);
 
-  console.log(`Runtime Doctor${smoke ? " + Smoke" : ""}\n`);
+  const ansi = createAnsi(
+    detectColorMode({
+      isTTY: Boolean(process.stdout.isTTY),
+      env: process.env,
+    }),
+  );
+
+  console.log(ansi.bold(`Runtime Doctor${smoke ? " + Smoke" : ""}`) + "\n");
   for (const [runtime, config] of Object.entries(defaults.runtimes)) {
     if (wanted && !wanted.has(runtime)) continue;
     const found = commandExists(config.command);
     if (!found.ok) {
-      console.log(`${runtime.padEnd(7)} MISS  ${config.command} not found`);
+      console.log(
+        `${runtime.padEnd(7)} ${ansi.red("MISS")}  ${config.command} not found`,
+      );
       continue;
     }
     const version = runtimeVersion(runtime, config.command);
     const versionText =
       version.stdout || version.stderr || "version unavailable";
     console.log(
-      `${runtime.padEnd(7)} OK    ${found.path}    ${versionText.split("\n")[0]}`,
+      `${runtime.padEnd(7)} ${ansi.green("OK")}    ${found.path}    ${ansi.dim(versionText.split("\n")[0])}`,
     );
 
     if (!smoke) continue;
@@ -44,8 +55,9 @@ export async function runDoctor(flags: Flags): Promise<void> {
     const stderr = result.stderr.trim();
     const expected = `LOOM_WORKER_OK_${runtime.toUpperCase()}`;
     const smokeOk = result.status === 0 && stdout.includes(expected);
+    const verdict = smokeOk ? ansi.green("OK") : ansi.red("FAIL");
     console.log(
-      `         smoke ${smokeOk ? "OK" : "FAIL"} status=${result.status == null ? "null" : result.status} session=${dir}`,
+      `         smoke ${verdict} status=${result.status == null ? "null" : result.status} session=${dir}`,
     );
     if (!smokeOk && stdout) {
       console.log(
