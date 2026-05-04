@@ -86,4 +86,40 @@ describe("cron jobs", () => {
 
     await expect(runCronJob("disabled")).rejects.toThrow(/disabled/);
   });
+
+  it("blocks high-risk jobs unless explicitly approved", async () => {
+    fs.writeFileSync(path.join(tmp, ".env"), "SECRET_TOKEN=abc\n", "utf8");
+    addCronJob({
+      id: "read-secret",
+      command: "cat",
+      args: [".env"],
+      schedule: "@manual",
+      cwd: tmp,
+      feature: "read-secret",
+      enabled: true,
+    });
+
+    await expect(runCronJob("read-secret")).rejects.toThrow(
+      /blocked by approval policy/,
+    );
+  });
+
+  it("allows high-risk jobs with explicit allow-risky approval mode", async () => {
+    fs.writeFileSync(path.join(tmp, ".env"), "SECRET_TOKEN=abc\n", "utf8");
+    addCronJob({
+      id: "approved-secret-read",
+      command: "cat",
+      args: [".env"],
+      schedule: "@manual",
+      cwd: tmp,
+      feature: "approved-secret-read",
+      enabled: true,
+      approvalMode: "allow-risky",
+    });
+
+    const result = await runCronJob("approved-secret-read");
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("SECRET_TOKEN=abc");
+  });
 });

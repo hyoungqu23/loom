@@ -5,6 +5,7 @@ import { ensureWorkspaceState, workspaceRoot } from "../workspace";
 import { readJson, writeJson } from "../util/json";
 import { runSpec } from "../engine/spawn";
 import { DEFAULT_RUNTIME_TIMEOUT_MS } from "../engine/constants";
+import { classifyCommandRisk } from "../engine/risk";
 
 export type CronJob = {
   id: string;
@@ -14,6 +15,7 @@ export type CronJob = {
   cwd: string;
   feature: string;
   enabled: boolean;
+  approvalMode?: string;
   lastRunAt: string | null;
   lastStatus: number | null;
 };
@@ -31,6 +33,7 @@ function normalizeJob(job: Omit<CronJob, "lastRunAt" | "lastStatus"> & Partial<C
     cwd: path.resolve(job.cwd || workspaceRoot()),
     feature: job.feature,
     enabled: job.enabled !== false,
+    approvalMode: job.approvalMode,
     lastRunAt: job.lastRunAt ?? null,
     lastStatus: job.lastStatus ?? null,
   };
@@ -62,6 +65,10 @@ export async function runCronJob(id: string): Promise<RuntimeResult> {
   if (idx === -1) throw new Error(`cron job not found: ${id}`);
   const job = jobs[idx];
   if (!job.enabled) throw new Error(`cron job disabled: ${id}`);
+  const risk = classifyCommandRisk({ command: job.command, args: job.args });
+  if (risk.level === "high" && job.approvalMode !== "allow-risky") {
+    throw new Error(`cron job blocked by approval policy: ${risk.reason}`);
+  }
 
   const spec: RuntimeSpec = {
     command: job.command,
