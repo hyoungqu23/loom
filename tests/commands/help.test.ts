@@ -27,6 +27,12 @@ describe("printHelp", () => {
     expect(text).toMatch(/discuss.*plan.*build.*review.*verify.*ship.*reflect/);
   });
 
+  it("documents the memory subcommand", async () => {
+    const buf: string[] = [];
+    await captureConsole(buf, () => printHelp());
+    expect(buf.join("\n")).toMatch(/loom memory list/);
+  });
+
   it("does not advertise removed v1 commands", async () => {
     const buf: string[] = [];
     await captureConsole(buf, () => printHelp());

@@ -8,6 +8,7 @@ Usage:
   loom doctor [--smoke] [--runtimes codex,claude]
   loom agents
   loom skills
+  loom memory list | promote <id> --type user|project|procedure | reject <id>
   loom phase <discuss|plan|build|review|verify|ship|reflect> "<task>" --feature <slug>
                                [--gate proceed|revise|abort] [--note "<text>"]
                                [--personas <a,b>] [--synthesize false] [--dry-run]
@@ -25,6 +26,7 @@ Workflow:
 Examples:
   loom init
   loom doctor --smoke
+  loom memory list
   loom autopilot "환불 정책 신규 기능" --feature refund-policy
   loom phase discuss "기획 초안 정리" --feature billing-v2
   loom phase plan    "API 설계"      --feature billing-v2

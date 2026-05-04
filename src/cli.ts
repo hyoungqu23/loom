@@ -9,6 +9,7 @@ import { runPhaseCommand } from "./commands/phase";
 import { runAutopilot } from "./commands/autopilot";
 import { printAgents, printInstalledSkills } from "./commands/listings";
 import { printHelp } from "./commands/help";
+import { runMemoryCommand } from "./commands/memory";
 import { runRuntime } from "./engine";
 import { buildRuntimeCommand } from "./runtimes";
 
@@ -35,6 +36,9 @@ const HANDLERS: { [key: string]: Handler } = {
   },
   skills: () => {
     printInstalledSkills();
+  },
+  memory: (positionals, flags) => {
+    runMemoryCommand(positionals.slice(1), flags);
   },
 };
 

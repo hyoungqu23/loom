@@ -15,6 +15,7 @@ export type MemoryEntry = {
 };
 
 export type MemoryCandidate = {
+  id?: string;
   kind: MemoryKind;
   source: string;
   confidence: MemoryConfidence;
@@ -193,4 +194,94 @@ export function writeMemoryCandidates(candidates: MemoryCandidate[]): string[] {
   }
 
   return written;
+}
+
+function parseCandidateFile(filePath: string): MemoryCandidate {
+  const content = fs.readFileSync(filePath, "utf8");
+  const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/m.exec(content);
+  if (!match) {
+    throw new Error(`invalid memory candidate: ${path.basename(filePath)}`);
+  }
+  const meta = parseMetadata(match[1]);
+  const kindLine = /^kind:\s*(.+)$/m.exec(match[1]);
+  const rawKind = kindLine?.[1]?.trim();
+  const kind: MemoryKind =
+    rawKind === "project" || rawKind === "procedure" ? rawKind : "user";
+  return {
+    id: path.basename(filePath, ".md"),
+    kind,
+    ...meta,
+    body: match[2].trim(),
+  };
+}
+
+export function listMemoryCandidates(): MemoryCandidate[] {
+  const dir = path.join(ensureMemoryStore(), "candidates");
+  return fs
+    .readdirSync(dir)
+    .filter((file) => file.endsWith(".md"))
+    .sort()
+    .map((file) => parseCandidateFile(path.join(dir, file)));
+}
+
+function candidatePath(id: string, area: "candidates" | "archive" = "candidates"): string {
+  const safe = path.basename(id).replace(/\.md$/, "");
+  return path.join(ensureMemoryStore(), area, `${safe}.md`);
+}
+
+function appendPromotedMemory(candidate: MemoryCandidate, type: MemoryKind): void {
+  if (type === "procedure") {
+    const id = candidate.id || slugifyBody(candidate.body);
+    const filePath = path.join(memoryRoot(), "procedures", `${id}.md`);
+    fs.writeFileSync(
+      filePath,
+      [
+        "# Procedure Memory",
+        "",
+        `source: ${candidate.source}`,
+        `confidence: ${candidate.confidence}`,
+        `updatedAt: ${candidate.updatedAt}`,
+        `tags: ${candidate.tags.join(", ")}`,
+        "",
+        candidate.body,
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    return;
+  }
+
+  const filePath = path.join(memoryRoot(), `${type}.md`);
+  fs.appendFileSync(
+    filePath,
+    [
+      "",
+      MEMORY_COMMENT_START,
+      `source: ${candidate.source}`,
+      `confidence: ${candidate.confidence}`,
+      `updatedAt: ${candidate.updatedAt}`,
+      `tags: ${candidate.tags.join(", ")}`,
+      MEMORY_COMMENT_END,
+      candidate.body,
+      "",
+    ].join("\n"),
+    "utf8",
+  );
+}
+
+export function promoteMemoryCandidate(id: string, type: MemoryKind): string {
+  const from = candidatePath(id);
+  if (!fs.existsSync(from)) throw new Error(`memory candidate not found: ${id}`);
+  const candidate = parseCandidateFile(from);
+  appendPromotedMemory(candidate, type);
+  fs.unlinkSync(from);
+  return type;
+}
+
+export function rejectMemoryCandidate(id: string): string {
+  const from = candidatePath(id);
+  if (!fs.existsSync(from)) throw new Error(`memory candidate not found: ${id}`);
+  const to = candidatePath(id, "archive");
+  fs.renameSync(from, to);
+  return to;
 }
