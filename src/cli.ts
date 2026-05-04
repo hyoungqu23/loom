@@ -75,11 +75,42 @@ export async function main(argv: string[]): Promise<void> {
   await handler(positionals, flags);
 }
 
+export type CliCommandResult = {
+  status: "ok" | "error";
+  stdout: string;
+  stderr: string;
+};
+
+export async function runCliCommand(argv: string[]): Promise<CliCommandResult> {
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  const originalLog = console.log;
+  const originalError = console.error;
+  console.log = (...args: unknown[]) => {
+    stdout.push(args.map(String).join(" "));
+  };
+  console.error = (...args: unknown[]) => {
+    stderr.push(args.map(String).join(" "));
+  };
+  try {
+    await main(argv);
+    return { status: "ok", stdout: stdout.join("\n"), stderr: stderr.join("\n") };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    stderr.push(message);
+    return { status: "error", stdout: stdout.join("\n"), stderr: stderr.join("\n") };
+  } finally {
+    console.log = originalLog;
+    console.error = originalError;
+  }
+}
+
 export { buildRuntimeCommand };
 export { runRuntime };
 
 module.exports = {
   main,
+  runCliCommand,
   buildRuntimeCommand,
   runRuntime,
 };

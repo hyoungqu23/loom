@@ -4,6 +4,7 @@ import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { captureConsole } from "../src/util/capture";
 import { main } from "../src/cli";
+import { runCliCommand } from "../src/cli";
 import { clearDefaultsCache } from "../src/config";
 import { createPhaseSession } from "../src/phases/session";
 import {
@@ -127,5 +128,15 @@ describe("main", () => {
     const buf: string[] = [];
     await captureConsole(buf, () => main([]));
     expect(buf.join("\n")).toMatch(/Usage:/);
+  });
+});
+
+describe("runCliCommand", () => {
+  it("returns captured stdout and status for command adapters", async () => {
+    const result = await runCliCommand(["memory", "list"]);
+
+    expect(result.status).toBe("ok");
+    expect(result.stdout).toContain("Memory Candidates");
+    expect(result.stderr).toBe("");
   });
 });
