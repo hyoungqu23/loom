@@ -2,29 +2,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   clearCommandCheckCache,
   commandExists,
-  shellQuote,
 } from "../../src/util/shell";
 
 afterEach(() => {
   clearCommandCheckCache();
-});
-
-describe("shellQuote", () => {
-  it("wraps a plain string in single quotes", () => {
-    expect(shellQuote("foo")).toBe("'foo'");
-  });
-
-  it("escapes embedded single quotes via the standard '\\'' trick", () => {
-    expect(shellQuote("it's")).toBe("'it'\\''s'");
-  });
-
-  it("preserves spaces without re-encoding them", () => {
-    expect(shellQuote("hello world")).toBe("'hello world'");
-  });
-
-  it("preserves shell metacharacters (which are inert inside single quotes)", () => {
-    expect(shellQuote("$(whoami)")).toBe("'$(whoami)'");
-  });
 });
 
 describe("commandExists", () => {

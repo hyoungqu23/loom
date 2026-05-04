@@ -10,6 +10,20 @@ import { deepMerge, JsonObject } from "./util/values";
 
 let cachedDefaults: Defaults | null = null;
 
+type WorkspaceCache = {
+  path: string;
+  mtimeMs: number;
+  size: number;
+  /** Serialized merged result; deep-cloned per call so callers can mutate. */
+  json: string;
+};
+
+let workspaceCache: WorkspaceCache | null = null;
+
+function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value));
+}
+
 /** Load and cache the package-level defaults.json. */
 function loadPackageDefaults(): Defaults {
   if (cachedDefaults) return cachedDefaults;
@@ -24,17 +38,36 @@ export function loadDefaults(): Defaults {
   const pkg = loadPackageDefaults();
   const configPath = workspaceConfigPath();
   if (!fs.existsSync(configPath)) {
-    // Return a deep clone so callers can't mutate the cached package defaults.
-    return JSON.parse(JSON.stringify(pkg));
+    workspaceCache = null;
+    return cloneJson(pkg);
   }
+
+  // Cache hit: same path + matching (mtime, size) means the file hasn't
+  // changed since we last merged. Skip the re-read + deep-merge + double
+  // JSON round-trip, which is non-trivial on hot paths like phase fanout
+  // where every worker resolution calls loadDefaults at least twice.
+  const stat = fs.statSync(configPath);
+  if (
+    workspaceCache &&
+    workspaceCache.path === configPath &&
+    workspaceCache.mtimeMs === stat.mtimeMs &&
+    workspaceCache.size === stat.size
+  ) {
+    return JSON.parse(workspaceCache.json);
+  }
+
   const localContent = fs.readFileSync(configPath, "utf8");
   const local: JsonObject = JSON.parse(localContent);
-  const base: JsonObject = JSON.parse(JSON.stringify(pkg));
+  const base: JsonObject = cloneJson(pkg);
   const merged: JsonObject = deepMerge(base, local);
-  // Re-parse through JSON to get the concrete domain shape without using
-  // a type assertion. JSON.parse returns `any`, which is assignable to
-  // `Defaults` under strict mode.
-  const result: Defaults = JSON.parse(JSON.stringify(merged));
+  const json = JSON.stringify(merged);
+  workspaceCache = {
+    path: configPath,
+    mtimeMs: stat.mtimeMs,
+    size: stat.size,
+    json,
+  };
+  const result: Defaults = JSON.parse(json);
   return result;
 }
 
@@ -50,9 +83,13 @@ export function loadWorkspaceConfig(): JsonObject {
 export function saveWorkspaceConfig(config: JsonObject): void {
   ensureWorkspaceState();
   writeJson(workspaceConfigPath(), config);
+  // Invalidate eagerly so the next loadDefaults() reflects this write
+  // even on filesystems with coarse mtime resolution.
+  workspaceCache = null;
 }
 
 /** For tests / hot-reload scenarios. */
 export function clearDefaultsCache(): void {
   cachedDefaults = null;
+  workspaceCache = null;
 }

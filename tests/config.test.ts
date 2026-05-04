@@ -82,6 +82,30 @@ describe("loadDefaults", () => {
     const defaults = loadDefaults();
     expect(defaults.runtimes.codex.model).toBe("second");
   });
+
+  it("returns a fresh clone on workspace cache hits", () => {
+    ensureWorkspaceState();
+    fs.writeFileSync(
+      workspaceConfigPath(),
+      JSON.stringify({
+        runtimes: { codex: { model: "cached-model" } },
+      }),
+    );
+
+    const first = loadDefaults();
+    first.runtimes.codex.model = "mutated-by-caller";
+
+    const second = loadDefaults();
+    expect(second.runtimes.codex.model).toBe("cached-model");
+  });
+
+  it("returns a fresh clone when no workspace config exists", () => {
+    const first = loadDefaults();
+    first.language = "mutated-by-caller";
+
+    const second = loadDefaults();
+    expect(second.language).not.toBe("mutated-by-caller");
+  });
 });
 
 describe("loadWorkspaceConfig", () => {

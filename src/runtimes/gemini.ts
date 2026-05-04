@@ -5,6 +5,9 @@ export const geminiAdapter: RuntimeAdapter = {
   name: "gemini",
   versionArgs: ["--version"],
   buildSpec({ prompt, cwd, model, config, options }: BuildSpecArgs): RuntimeSpec {
+    // Gemini CLI requires `-p` to be present to enable non-interactive
+    // mode; an empty `-p ""` value flips it into stdin-pipe mode so the
+    // full prompt can be streamed via stdin. Locked by gemini.test.ts.
     return {
       command: config.command,
       args: [

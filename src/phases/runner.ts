@@ -188,7 +188,12 @@ export async function runPhase(
     resolveAgentRun(persona, options.task, options.flags, { phase, handoff }),
   );
 
-  const workers = await Promise.all(
+  // Use allSettled so a worker that throws before/after spawn (e.g. a
+  // mkdir failure on a read-only mount, or a runtime that exits with an
+  // unhandled error) doesn't kill the rest of the phase. Spawn-level
+  // failures are already caught inside runSpec; this guards the surrounding
+  // I/O. Rejected runs are surfaced to the user and excluded from synthesis.
+  const settled = await Promise.allSettled(
     runs.map((run) => {
       const outputDir = path.join(
         sessionDir,
@@ -199,6 +204,27 @@ export async function runPhase(
       return runWorkerAsync(run, outputDir, options.hooks ?? {});
     }),
   );
+
+  const workers: WorkerResult[] = [];
+  for (let i = 0; i < settled.length; i += 1) {
+    const outcome = settled[i];
+    const run = runs[i];
+    if (outcome.status === "fulfilled") {
+      workers.push(outcome.value);
+      continue;
+    }
+    const reason =
+      outcome.reason instanceof Error
+        ? outcome.reason.stack || outcome.reason.message
+        : String(outcome.reason);
+    console.log(`[loom] error ${run.agentName} ${reason.split("\n")[0]}`);
+    appendWorkerOutput(
+      sessionDir,
+      phase,
+      run.agentName,
+      `(worker rejected before completion)\n\n${reason}`,
+    );
+  }
 
   for (const result of workers) {
     appendWorkerOutput(

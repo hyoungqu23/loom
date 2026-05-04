@@ -183,9 +183,23 @@ function readPriorOutputs(
     seen.add(phase);
     const phaseDir = path.join(sessionDir, WORKERS_DIR, phase);
     if (!fs.existsSync(phaseDir)) continue;
+    // Prefer the synthesis artifact when it exists — it's already a
+    // consolidated view across all personas for the phase, so concatenating
+    // raw per-persona outputs on top would just inflate the prompt without
+    // adding signal. Fall back to per-persona .md files when synthesis is
+    // missing (offline edits, --synthesize=false runs, etc.).
+    const synthesisPath = path.join(phaseDir, "synthesis.md");
+    if (fs.existsSync(synthesisPath)) {
+      const synthesis = fs.readFileSync(synthesisPath, "utf8").trim();
+      if (synthesis) {
+        out[phase] = synthesis;
+        continue;
+      }
+    }
     const parts: string[] = [];
     for (const file of fs.readdirSync(phaseDir).sort()) {
       if (!file.endsWith(".md")) continue;
+      if (file === "synthesis.md") continue;
       parts.push(fs.readFileSync(path.join(phaseDir, file), "utf8"));
     }
     if (parts.length > 0) out[phase] = parts.join("\n\n").trim();
