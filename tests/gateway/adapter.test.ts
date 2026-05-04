@@ -50,7 +50,21 @@ describe("handleGatewayMessage", () => {
     });
 
     expect(result.status).toBe("error");
-    expect(result.text).toContain("Unknown command");
+    expect(result.text).toContain("not allowed from gateway");
+  });
+
+  it("requires human approval for mutating commands", async () => {
+    const result = await handleGatewayMessage({
+      text: "loom cron run nightly-qa",
+      sender: "u1",
+      channel: "slack",
+      threadId: "t1",
+      attachments: [],
+    });
+
+    expect(result.status).toBe("error");
+    expect(result.nextAction).toBe("needs-human");
+    expect(result.text).toContain("not allowed from gateway");
   });
 
   it("ignores non-Loom messages with a no-op response", async () => {

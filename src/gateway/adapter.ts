@@ -22,6 +22,18 @@ function splitCommand(text: string): string[] {
   return parts.map((part) => part.replace(/^["']|["']$/g, ""));
 }
 
+function isGatewayAllowed(argv: string[]): boolean {
+  const [command, subcommand] = argv;
+  if (!command || command === "help") return true;
+  if (command === "agents" || command === "skills") return subcommand !== "review";
+  if (command === "memory") return subcommand === "list" || subcommand === "search";
+  if (command === "metrics") return subcommand === "summary" || !subcommand;
+  if (command === "export") return subcommand === "trajectory";
+  if (command === "cron") return subcommand === "list" || !subcommand;
+  if (command === "config") return subcommand === "show" || subcommand === "path";
+  return false;
+}
+
 export async function handleGatewayMessage(
   input: GatewayInput,
 ): Promise<GatewayOutput> {
@@ -30,7 +42,17 @@ export async function handleGatewayMessage(
     return { text: "", files: [], status: "ignored", nextAction: "none" };
   }
 
-  const result = await runCliCommand(argv.slice(1));
+  const commandArgv = argv.slice(1);
+  if (!isGatewayAllowed(commandArgv)) {
+    return {
+      text: `command not allowed from gateway: ${commandArgv.join(" ")}`,
+      files: [],
+      status: "error",
+      nextAction: "needs-human",
+    };
+  }
+
+  const result = await runCliCommand(commandArgv);
   if (result.status === "ok") {
     return {
       text: result.stdout,
