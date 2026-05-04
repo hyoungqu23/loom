@@ -12,6 +12,7 @@ import { printHelp } from "./commands/help";
 import { runMemoryCommand } from "./commands/memory";
 import { runMetricsCommand } from "./commands/metrics";
 import { runExportCommand } from "./commands/export";
+import { runCronCommand } from "./commands/cron";
 import { runRuntime } from "./engine";
 import { buildRuntimeCommand } from "./runtimes";
 
@@ -47,6 +48,9 @@ const HANDLERS: { [key: string]: Handler } = {
   },
   export: (positionals, flags) => {
     runExportCommand(positionals.slice(1), flags);
+  },
+  cron: async (positionals, flags) => {
+    await runCronCommand(positionals.slice(1), flags);
   },
 };
 

@@ -34,6 +34,12 @@ describe("printHelp", () => {
     expect(buf.join("\n")).toMatch(/loom memory search/);
   });
 
+  it("documents the cron subcommand", async () => {
+    const buf: string[] = [];
+    await captureConsole(buf, () => printHelp());
+    expect(buf.join("\n")).toMatch(/loom cron list/);
+  });
+
   it("does not advertise removed v1 commands", async () => {
     const buf: string[] = [];
     await captureConsole(buf, () => printHelp());

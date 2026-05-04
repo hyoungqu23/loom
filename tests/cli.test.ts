@@ -79,6 +79,12 @@ describe("main", () => {
     expect(buf.join("\n")).toMatch(/Metrics Summary/);
   });
 
+  it("dispatches to cron command", async () => {
+    const buf: string[] = [];
+    await captureConsole(buf, () => main(["cron", "list"]));
+    expect(buf.join("\n")).toMatch(/Cron Jobs/);
+  });
+
   it("dispatches to export command", async () => {
     createPhaseSession("exportable");
     const buf: string[] = [];

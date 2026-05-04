@@ -1,0 +1,89 @@
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  addCronJob,
+  cronJobsPath,
+  listCronJobs,
+  runCronJob,
+} from "../../src/cron/jobs";
+import {
+  ensureWorkspaceState,
+  getActiveWorkspace,
+  setActiveWorkspace,
+} from "../../src/workspace";
+
+let tmp: string;
+let originalWorkspace: string;
+
+beforeEach(() => {
+  originalWorkspace = getActiveWorkspace();
+  tmp = fs.mkdtempSync(path.join(os.tmpdir(), "loom-cron-"));
+  setActiveWorkspace(tmp);
+  ensureWorkspaceState();
+});
+
+afterEach(() => {
+  setActiveWorkspace(originalWorkspace);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+describe("cron jobs", () => {
+  it("persists jobs with the cron schema", () => {
+    addCronJob({
+      id: "nightly-qa",
+      command: "node",
+      args: ["--version"],
+      schedule: "0 2 * * *",
+      cwd: tmp,
+      feature: "nightly-qa",
+      enabled: true,
+    });
+
+    expect(fs.existsSync(cronJobsPath())).toBe(true);
+    expect(listCronJobs()).toEqual([
+      expect.objectContaining({
+        id: "nightly-qa",
+        command: "node",
+        schedule: "0 2 * * *",
+        enabled: true,
+        lastRunAt: null,
+        lastStatus: null,
+      }),
+    ]);
+  });
+
+  it("runs enabled jobs and records lastRunAt / lastStatus", async () => {
+    addCronJob({
+      id: "node-version",
+      command: "node",
+      args: ["--version"],
+      schedule: "@manual",
+      cwd: tmp,
+      feature: "node-version",
+      enabled: true,
+    });
+
+    const result = await runCronJob("node-version");
+
+    expect(result.status).toBe(0);
+    const [job] = listCronJobs();
+    expect(job.lastRunAt).toMatch(/T/);
+    expect(job.lastStatus).toBe(0);
+  });
+
+  it("does not run disabled jobs", async () => {
+    addCronJob({
+      id: "disabled",
+      command: "node",
+      args: ["--version"],
+      schedule: "@manual",
+      cwd: tmp,
+      feature: "disabled",
+      enabled: false,
+    });
+
+    await expect(runCronJob("disabled")).rejects.toThrow(/disabled/);
+  });
+});
