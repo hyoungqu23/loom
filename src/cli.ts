@@ -131,10 +131,3 @@ export async function runCliCommand(argv: string[]): Promise<CliCommandResult> {
 
 export { buildRuntimeCommand };
 export { runRuntime };
-
-module.exports = {
-  main,
-  runCliCommand,
-  buildRuntimeCommand,
-  runRuntime,
-};
