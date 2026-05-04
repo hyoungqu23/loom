@@ -210,6 +210,7 @@ export async function runAutopilot(
     driver.log(
       `[loom] autopilot done — ran ${phasesRun.length} phase(s), ended at ${phase} (${endReason})`,
     );
+    driver.markEnd(endReason === "abort" ? "aborted" : "completed");
   } finally {
     driver.shutdown();
   }

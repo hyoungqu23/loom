@@ -7,7 +7,12 @@
 
 import { LOOM_PHASES, type LoomPhase } from "../types";
 import type { ColorMode } from "./ansi";
-import { renderFrame, type PhaseRow, type RenderState } from "./frame";
+import {
+  renderFrame,
+  type PhaseRow,
+  type RenderState,
+  type TerminalReason,
+} from "./frame";
 import { createFrameSink, createPlainSink, type Sink } from "./sink";
 
 export type PhaseSummary = {
@@ -27,6 +32,8 @@ export type FrameDriver = {
   log(line: string): void;
   pauseFrame(): void;
   resumeFrame(): void;
+  /** Switch the footer to a final receipt before shutdown. */
+  markEnd(reason: TerminalReason): void;
   shutdown(): void;
   /** Test-only escape hatch for assertions on internal RenderState. */
   __getState(): RenderState;
@@ -71,6 +78,7 @@ export function createFrameDriver(opts: DriverOptions): FrameDriver {
     asciiOnly: opts.asciiOnly,
     colorMode: opts.colorMode,
     nextGateEtaMs: null,
+    terminal: null,
   };
 
   const sink: Sink = opts.frameEnabled
@@ -189,17 +197,19 @@ export function createFrameDriver(opts: DriverOptions): FrameDriver {
 
   function pauseFrame(): void {
     if (!opts.frameEnabled) return;
-    // Stop the tick first so it doesn't redraw on top of the readline.
+    // Stop the tick so it doesn't redraw underneath the gate prompt.
     if (stopTick) {
       stopTick();
       stopTick = null;
     }
-    // Clear the frame so the cursor is on a fresh line below all logs.
-    // Use sink.log("") trick? No — log writes a newline. Use surface.clear via finalize+recreate? Simpler: just nothing — readline will scroll the frame up. Frame stays visible above the prompt.
+    // Suspend sink redraws so multi-line gate logs (synthesis preview)
+    // don't accumulate against a stale prevLineCount.
+    sink.pause();
   }
 
   function resumeFrame(): void {
     if (!opts.frameEnabled) return;
+    sink.resume();
     if (!stopTick) {
       stopTick = scheduler.setInterval(() => {
         state.tick += 1;
@@ -207,7 +217,11 @@ export function createFrameDriver(opts: DriverOptions): FrameDriver {
         sink.refresh();
       }, tickMs);
     }
-    sink.refresh();
+  }
+
+  function markEnd(reason: TerminalReason): void {
+    state.terminal = reason;
+    if (opts.frameEnabled) sink.refresh();
   }
 
   function shutdown(): void {
@@ -228,6 +242,7 @@ export function createFrameDriver(opts: DriverOptions): FrameDriver {
     log,
     pauseFrame,
     resumeFrame,
+    markEnd,
     shutdown,
     __getState: () => state,
   };

@@ -244,6 +244,56 @@ describe("renderFrame — color mode", () => {
   });
 });
 
+describe("renderFrame — terminal reason footer", () => {
+  it("terminal='aborted' on partial run shows 'aborted at <last_done>' with bytes/elapsed", () => {
+    let phases = queuedAll();
+    phases = setPhase(phases, "discuss", {
+      phase: "discuss",
+      status: "done",
+      personas: 1,
+      outBytes: 40,
+      elapsedMs: 22_000,
+      failed: 1,
+    });
+    const lines = renderFrame(baseState({ phases, terminal: "aborted" }));
+    const last = lines[lines.length - 1];
+    expect(last).toContain("aborted");
+    expect(last).toContain("at discuss");
+    expect(last).toContain("40 B out");
+    expect(last).toContain("0:22");
+  });
+
+  it("terminal='aborted' before any phase done falls back to first phase name", () => {
+    const lines = renderFrame(baseState({ terminal: "aborted" }));
+    const last = lines[lines.length - 1];
+    expect(last).toContain("aborted at discuss");
+  });
+
+  it("terminal='completed' shows 'done in <total>  <bytes>'", () => {
+    let phases = queuedAll();
+    phases = setPhase(phases, "discuss", {
+      phase: "discuss",
+      status: "done",
+      personas: 1,
+      outBytes: 1_024,
+      elapsedMs: 30_000,
+      failed: 0,
+    });
+    phases = setPhase(phases, "plan", {
+      phase: "plan",
+      status: "done",
+      personas: 1,
+      outBytes: 2_048,
+      elapsedMs: 60_000,
+      failed: 0,
+    });
+    const lines = renderFrame(baseState({ phases, terminal: "completed" }));
+    const last = lines[lines.length - 1];
+    expect(last).toContain("done in 1:30");
+    expect(last).toContain("3.0 KB out");
+  });
+});
+
 describe("renderFrame — bytes/persona singular vs plural", () => {
   it("uses singular 'persona' for 1, plural 'personas' for >1", () => {
     let phases = queuedAll();

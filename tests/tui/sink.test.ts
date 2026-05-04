@@ -96,6 +96,56 @@ describe("createFrameSink", () => {
     );
   });
 
+  it("pause() clears the frame and routes log() directly to out without re-rendering", () => {
+    const sink = createFrameSink(
+      out as unknown as NodeJS.WritableStream,
+      () => frameLines,
+    );
+    sink.refresh(); // initial frame
+    out.reset();
+    sink.pause();
+    // pause() should clear the prior frame (cursor up + erase)
+    expect(out.joined()).toBe(`${ESC}[2F${ESC}[J`);
+    out.reset();
+    sink.log("synth line 1");
+    sink.log("synth line 2 with\nembedded newlines\nstuff");
+    // No surface clear, no frame re-render — just the log lines + newline
+    expect(out.joined()).toBe(
+      "synth line 1\n" + "synth line 2 with\nembedded newlines\nstuff\n",
+    );
+    out.reset();
+    sink.refresh(); // refresh should be no-op while paused
+    expect(out.joined()).toBe("");
+  });
+
+  it("resume() re-renders the frame fresh at the current cursor (no cursor-up)", () => {
+    const sink = createFrameSink(
+      out as unknown as NodeJS.WritableStream,
+      () => frameLines,
+    );
+    sink.refresh();
+    sink.pause();
+    sink.log("interim text");
+    out.reset();
+    sink.resume();
+    // No cursor-up because handleResize was called before render
+    expect(out.joined()).toBe("frame1\nframe2\n");
+  });
+
+  it("pause() is idempotent and resume() before pause is a no-op", () => {
+    const sink = createFrameSink(
+      out as unknown as NodeJS.WritableStream,
+      () => frameLines,
+    );
+    sink.resume(); // before any pause — nothing happens
+    expect(out.joined()).toBe("");
+    sink.refresh();
+    sink.pause();
+    out.reset();
+    sink.pause(); // second pause — already paused, no-op
+    expect(out.joined()).toBe("");
+  });
+
   it("finalize() does one last render then stops responding to refresh", () => {
     const sink = createFrameSink(
       out as unknown as NodeJS.WritableStream,

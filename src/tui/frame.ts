@@ -42,6 +42,8 @@ export type PhaseRow =
       failed: number;
     };
 
+export type TerminalReason = "completed" | "aborted";
+
 export type RenderState = {
   feature: string;
   /** length-7 array, one row per LoomPhase, in `LOOM_PHASES` order */
@@ -54,6 +56,8 @@ export type RenderState = {
   colorMode: ColorMode;
   /** ms hint for "next gate ~30s" footer; null when unknown */
   nextGateEtaMs?: number | null;
+  /** Set by the driver on shutdown; switches the footer to a final receipt. */
+  terminal?: TerminalReason | null;
 };
 
 const PHASE_COL = 7; // pad name to "discuss"/"reflect" width
@@ -130,20 +134,42 @@ function queuedLine(phase: LoomPhase, ansi: Ansi, ic: Icons): string {
   return `  ${ansi.dim(ic.queued)} ${padEnd(phase, PHASE_COL)}   queued`;
 }
 
-function statusFooter(state: RenderState): string[] {
+function aggregate(state: RenderState): { bytes: number; ms: number; lastDone: LoomPhase | null } {
+  let bytes = 0;
+  let ms = 0;
+  let lastDone: LoomPhase | null = null;
+  for (const p of state.phases) {
+    if (p.status === "done") {
+      bytes += p.outBytes;
+      ms += p.elapsedMs;
+      lastDone = p.phase;
+    }
+  }
+  return { bytes, ms, lastDone };
+}
+
+function statusFooter(state: RenderState, ansi: ReturnType<typeof createAnsi>): string[] {
+  if (state.terminal) {
+    const { bytes, ms, lastDone } = aggregate(state);
+    if (state.terminal === "aborted") {
+      const where = lastDone ?? state.phases[0]?.phase ?? "discuss";
+      return [
+        "",
+        `  ${ansi.red("aborted")} at ${where}   ${formatBytes(bytes)} out   ${formatDuration(ms)}`,
+      ];
+    }
+    // completed
+    return [
+      "",
+      `  ${ansi.green("done")} in ${formatDuration(ms)}   ${formatBytes(bytes)} out`,
+    ];
+  }
   const allDone =
     state.phases.length === LOOM_PHASES.length &&
     state.phases.every((p) => p.status === "done");
   if (allDone) {
-    let totalBytes = 0;
-    let totalMs = 0;
-    for (const p of state.phases) {
-      if (p.status === "done") {
-        totalBytes += p.outBytes;
-        totalMs += p.elapsedMs;
-      }
-    }
-    return ["", `  done in ${formatDuration(totalMs)}   ${formatBytes(totalBytes)} out`];
+    const { bytes, ms } = aggregate(state);
+    return ["", `  ${ansi.green("done")} in ${formatDuration(ms)}   ${formatBytes(bytes)} out`];
   }
   const noneStarted = state.phases.every((p) => p.status === "queued");
   if (noneStarted) return ["", "  starting…"];
@@ -179,6 +205,6 @@ export function renderFrame(state: RenderState): string[] {
     out.push(doneLine(row, ansi, ic));
   }
 
-  out.push(...statusFooter(state));
+  out.push(...statusFooter(state, ansi));
   return out;
 }
