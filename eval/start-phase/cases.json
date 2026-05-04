@@ -1,0 +1,129 @@
+{
+  "$comment": "Golden cases for inferStartPhase. 'expectedPhase' asserts which phase the heuristic + state-guards should pick. 'sessionState' selects which fixture handoff is used: 'none' (null), 'empty' (no CONTEXT/PLAN), 'context' (CONTEXT.md only), 'planned' (CONTEXT + PLAN).",
+  "cases": [
+    {
+      "id": "ko-prd",
+      "input": "PRD 만들어줘",
+      "sessionState": "none",
+      "expectedPhase": "discuss",
+      "expectedConfidence": "high"
+    },
+    {
+      "id": "ko-new-idea",
+      "input": "새 기능 아이디어가 있어 — 알림 모듈을 어떻게 잡을지 고민",
+      "sessionState": "none",
+      "expectedPhase": "discuss"
+    },
+    {
+      "id": "en-prd",
+      "input": "write a product requirements doc for billing v2",
+      "sessionState": "none",
+      "expectedPhase": "discuss"
+    },
+    {
+      "id": "ko-plan-with-context",
+      "input": "어떻게 설계할까?",
+      "sessionState": "context",
+      "expectedPhase": "plan",
+      "expectedConfidence": "high"
+    },
+    {
+      "id": "en-architecture-with-context",
+      "input": "which library should we use for retry policy",
+      "sessionState": "context",
+      "expectedPhase": "plan"
+    },
+    {
+      "id": "guard-plan-without-context",
+      "input": "design the architecture",
+      "sessionState": "empty",
+      "expectedPhase": "discuss",
+      "expectedConfidence": "medium",
+      "expectedNoteRegex": "CONTEXT\\.md"
+    },
+    {
+      "id": "build-with-plan",
+      "input": "이거 구현해줘",
+      "sessionState": "planned",
+      "expectedPhase": "build",
+      "expectedConfidence": "high"
+    },
+    {
+      "id": "guard-build-without-plan",
+      "input": "implement the login flow",
+      "sessionState": "empty",
+      "expectedPhase": "plan",
+      "expectedConfidence": "medium",
+      "expectedNoteRegex": "PLAN\\.md"
+    },
+    {
+      "id": "guard-build-no-handoff",
+      "input": "implement the login flow",
+      "sessionState": "none",
+      "expectedPhase": "build",
+      "expectedConfidence": "high"
+    },
+    {
+      "id": "review-with-plan",
+      "input": "리뷰해줘",
+      "sessionState": "planned",
+      "expectedPhase": "review"
+    },
+    {
+      "id": "guard-review-without-plan",
+      "input": "review this PR for security",
+      "sessionState": "empty",
+      "expectedPhase": "plan",
+      "expectedConfidence": "medium",
+      "expectedNoteRegex": "PLAN\\.md"
+    },
+    {
+      "id": "verify-with-plan",
+      "input": "QA 시나리오 만들어줘",
+      "sessionState": "planned",
+      "expectedPhase": "verify"
+    },
+    {
+      "id": "guard-verify-without-plan",
+      "input": "verify this works",
+      "sessionState": "empty",
+      "expectedPhase": "plan",
+      "expectedConfidence": "medium",
+      "expectedNoteRegex": "PLAN\\.md"
+    },
+    {
+      "id": "ship-with-plan",
+      "input": "PR 만들어줘",
+      "sessionState": "planned",
+      "expectedPhase": "ship"
+    },
+    {
+      "id": "guard-ship-without-plan",
+      "input": "배포 준비",
+      "sessionState": "empty",
+      "expectedPhase": "discuss",
+      "expectedConfidence": "medium",
+      "expectedNoteRegex": "(plan|context)"
+    },
+    {
+      "id": "reflect",
+      "input": "회고 작성",
+      "sessionState": "none",
+      "expectedPhase": "reflect"
+    },
+    {
+      "id": "fallback-discuss",
+      "input": "blah blah unrelated content",
+      "sessionState": "none",
+      "expectedPhase": "discuss",
+      "expectedConfidence": "low",
+      "expectedNoteRegex": "no routing rule matched"
+    },
+    {
+      "id": "review-pr-priority-over-ship",
+      "input": "review the PR for security",
+      "sessionState": "planned",
+      "expectedPhase": "review"
+    }
+  ]
+}

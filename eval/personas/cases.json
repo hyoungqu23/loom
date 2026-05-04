@@ -1,0 +1,49 @@
+{
+  "$comment": "비결정적 LLM 평가용 케이스. 각 케이스는 한 페르소나에게 직접 ask하고, expected_anchors가 응답에 모두 포함되는지 확인. 점수는 anchor 매칭 비율.",
+  "cases": [
+    {
+      "id": "kayle-finds-sql-injection",
+      "agent": "kayle",
+      "task": "이 코드를 리뷰해줘:\n```ts\nfunction getUser(id: string) { return db.query(`SELECT * FROM users WHERE id = ${id}`); }\n```",
+      "expectedAnchors": ["SQL", "injection", "Blocker", "src/"],
+      "antiAnchors": ["스타일", "공백"]
+    },
+    {
+      "id": "ryze-asks-for-success-metric",
+      "agent": "ryze",
+      "task": "검색 기능을 더 좋게 만들고 싶어요",
+      "expectedAnchors": ["성공 지표", "측정", "수용 기준", "비범위"]
+    },
+    {
+      "id": "viktor-respects-conventions",
+      "agent": "viktor",
+      "task": "src/util/parse-args.ts에 새 옵션 --json을 추가해줘",
+      "expectedAnchors": ["검증 방법", "파일", "테스트"],
+      "antiAnchors": ["새 라이브러리"]
+    },
+    {
+      "id": "orianna-defines-empty-state",
+      "agent": "orianna",
+      "task": "검색 결과 화면의 UX 결정",
+      "expectedAnchors": ["Loading", "Empty", "Error", "접근성"]
+    },
+    {
+      "id": "caitlyn-needs-evidence",
+      "agent": "caitlyn",
+      "task": "이번 변경에 대한 QA 결과 보고",
+      "expectedAnchors": ["증거", "시나리오", "Ready"]
+    },
+    {
+      "id": "zilean-cites-source",
+      "agent": "zilean",
+      "task": "React 19의 useActionState API가 stable인지 확인",
+      "expectedAnchors": ["출처", "확인", "확신도"]
+    },
+    {
+      "id": "bard-extracts-pattern",
+      "agent": "bard",
+      "task": "지난 5개 세션을 회고. 세 번 반복된 마찰: TypeScript strict 모드 누락",
+      "expectedAnchors": ["결정 후보", "L2", "백로그"]
+    }
+  ]
+}
