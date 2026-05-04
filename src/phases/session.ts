@@ -17,6 +17,7 @@ import {
   serializePlan,
   serializeState,
 } from "./serialize";
+import { redactText, workerOutputRedactionEnabled } from "../util/redact";
 
 const STATE_FILE = "STATE.md";
 const CONTEXT_FILE = "CONTEXT.md";
@@ -130,7 +131,9 @@ export function appendWorkerOutput(
   fs.mkdirSync(phaseDir, { recursive: true });
   const file = path.join(phaseDir, `${persona}.md`);
   const stamp = nowIso();
-  const block = `\n\n<!-- run @ ${stamp} -->\n${body.trim()}\n`;
+  const trimmed = body.trim();
+  const safe = workerOutputRedactionEnabled() ? redactText(trimmed) : trimmed;
+  const block = `\n\n<!-- run @ ${stamp} -->\n${safe}\n`;
   if (fs.existsSync(file)) {
     fs.appendFileSync(file, block, "utf8");
   } else {
