@@ -62,6 +62,7 @@ describe("runWorkerAsync", () => {
     );
     expect(request.commandRisk.level).toBe("safe");
     expect(request.commandRisk.categories).toEqual([]);
+    expect(request.approvalScope).toBe("runtime-command-only");
   });
 
   it("records relevant skill names in request.json", async () => {

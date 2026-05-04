@@ -66,6 +66,7 @@ export async function runWorkerAsync(
     command: worker.spec.command,
     args: worker.spec.args,
     commandRisk,
+    approvalScope: "runtime-command-only",
     relevantSkills: worker.relevantSkills || [],
     stdinPreview: worker.spec.stdin ? worker.spec.stdin.slice(0, 1200) : null,
     cwd: worker.spec.cwd,
@@ -82,6 +83,7 @@ export async function runWorkerAsync(
       signal: null,
       denied: true,
       commandRisk,
+      approvalScope: "runtime-command-only",
       finishedAt: new Date().toISOString(),
     });
     const result: WorkerResult = {
@@ -112,6 +114,7 @@ export async function runWorkerAsync(
     signal: runResult.signal,
     denied: false,
     commandRisk,
+    approvalScope: "runtime-command-only",
     finishedAt: new Date().toISOString(),
   });
 
