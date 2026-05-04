@@ -43,6 +43,8 @@ export type PhaseRunOptions = {
   hooks?: TeamHooks;
   /** Override personas; defaults to matrix.primary for the phase. */
   personas?: string[];
+  /** Include matrix secondary personas after primary personas. Ignored when personas is set. */
+  includeSecondary?: boolean;
   /** Run synthesizer (twistedfate) over phase outputs. */
   synthesize?: boolean;
   /**
@@ -71,14 +73,32 @@ function ensurePhase(value: string): LoomPhase {
   return value as LoomPhase;
 }
 
-function selectPersonas(phase: LoomPhase, override?: string[]): string[] {
-  if (override && override.length > 0) return override;
+function uniqueInOrder(values: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    if (seen.has(value)) continue;
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
+}
+
+function selectPersonas(
+  phase: LoomPhase,
+  override?: string[],
+  includeSecondary = false,
+): string[] {
+  if (override && override.length > 0) return uniqueInOrder(override);
   const matrix = loadPhaseMatrix();
   const rule = matrix.find((r) => r.phase === phase);
   // For phase runs we default to primary personas only — secondary
-  // personas are advisory and can be invoked via `--personas` if
-  // the user wants them.
-  if (rule && rule.primary.length > 0) return rule.primary;
+  // personas are advisory unless the caller explicitly asks to include them.
+  if (rule && rule.primary.length > 0) {
+    return uniqueInOrder(
+      includeSecondary ? [...rule.primary, ...rule.secondary] : rule.primary,
+    );
+  }
   // Fall back to all matrix entries for the phase (primary+secondary)
   // so a misconfigured matrix still yields someone to run.
   const fallback = personasForPhase(matrix, phase);
@@ -193,7 +213,11 @@ export async function runPhase(
   options: PhaseRunOptions,
 ): Promise<PhaseRunResult> {
   const phase = ensurePhase(rawPhase);
-  const personas = selectPersonas(phase, options.personas);
+  const personas = selectPersonas(
+    phase,
+    options.personas,
+    options.includeSecondary,
+  );
   const dryRun = flagBool(options.flags["dry-run"]);
   const shouldSynthesize = options.synthesize ?? !dryRun;
 

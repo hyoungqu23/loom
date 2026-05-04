@@ -140,7 +140,16 @@ loom phase review "이 PR 리뷰" --feature autocomplete --personas kayle
 
 매트릭스의 primary 페르소나 대신 명시한 페르소나만 호출. 단일 페르소나 호출도 이 경로.
 
-### 2.7 합성 단계 끄기
+### 2.7 Secondary 페르소나까지 함께 돌리기
+
+```bash
+loom phase discuss "요구사항 정리" --feature autocomplete --include-secondary
+loom autopilot "사용자 검색 자동완성을 추가한다" --feature autocomplete --include-secondary
+```
+
+기본은 매트릭스의 primary 페르소나만 호출한다. `--include-secondary`를 주면 같은 phase에서 primary 다음 secondary를 함께 병렬 실행한다. `--personas a,b`를 명시하면 `--include-secondary`보다 우선한다.
+
+### 2.8 합성 단계 끄기
 
 ```bash
 loom phase plan "..." --feature autocomplete --synthesize false
@@ -148,7 +157,7 @@ loom phase plan "..." --feature autocomplete --synthesize false
 
 기본은 `twistedfate`가 워커 출력을 합성한다. 단일 페르소나거나 합성이 군더더기일 때 끈다.
 
-### 2.8 dry-run으로 어떤 페르소나가 어떻게 호출되는지만 보기
+### 2.9 dry-run으로 어떤 페르소나가 어떻게 호출되는지만 보기
 
 ```bash
 loom phase plan "API 설계" --feature autocomplete --dry-run
@@ -234,7 +243,7 @@ loom agents     # 전체 등록 페르소나
 
 `twistedfate`은 모든 phase의 합성자(synthesizer) — 매트릭스에 없어도 phase 끝에 자동 호출된다 (`--synthesize false`로 끔).
 
-`--personas a,b,c`로 매트릭스를 일회성으로 무시할 수 있다.
+`--include-secondary`로 primary와 secondary를 함께 실행할 수 있다. `--personas a,b,c`로 매트릭스를 일회성으로 무시할 수 있으며, 이 경우 `--include-secondary`는 적용되지 않는다.
 
 ---
 
@@ -376,6 +385,10 @@ loom phase build "..." --feature latest
 
 # 매트릭스 무시하고 특정 페르소나만
 loom phase review "..." --feature <slug> --personas kayle
+
+# primary + secondary 함께 실행
+loom phase discuss "..." --feature <slug> --include-secondary
+loom autopilot "<task>" --feature <slug> --include-secondary
 
 # dry-run
 loom phase plan "..." --feature <slug> --dry-run

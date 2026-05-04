@@ -49,12 +49,14 @@ loom agents
 loom skills
 loom phase <discuss|plan|build|review|verify|ship|reflect> "<task>" --feature <slug>
                               [--gate proceed|revise|abort] [--note "<text>"]
-                              [--personas <a,b>] [--synthesize false] [--dry-run]
+                              [--personas <a,b>] [--include-secondary]
+                              [--synthesize false] [--dry-run]
 loom autopilot "<task>" --feature <slug> [--start <phase>] [--end <phase>]
-                        [--synthesize false] [--dry-run]
+                        [--include-secondary] [--synthesize false] [--dry-run]
 ```
 
 `--feature` is required for `phase` and `autopilot`. Use `--feature latest` to resume the most recent feature session.
+By default phases run primary personas only. Add `--include-secondary` to run the matrix secondary personas in the same phase pass.
 
 ## Quick Start
 

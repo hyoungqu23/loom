@@ -66,6 +66,24 @@ describe("runPhase", () => {
     expect(result?.workers.map((w) => w.agentName)).toEqual(["ryze"]);
   });
 
+  it("includes secondary personas after primary when requested", async () => {
+    const dir = createPhaseSession("foo");
+    let result;
+    await captureConsole([], async () => {
+      result = await runPhase(dir, "discuss", {
+        task: "design X",
+        flags: {},
+        includeSecondary: true,
+        synthesize: false,
+      });
+    });
+    expect(result?.workers.map((w) => w.agentName)).toEqual([
+      "ryze",
+      "zilean",
+      "local-fast",
+    ]);
+  });
+
   it("respects an explicit personas override", async () => {
     const dir = createPhaseSession("foo");
     let result;
@@ -74,6 +92,21 @@ describe("runPhase", () => {
         task: "x",
         flags: {},
         personas: ["zilean"],
+        synthesize: false,
+      });
+    });
+    expect(result?.workers.map((w) => w.agentName)).toEqual(["zilean"]);
+  });
+
+  it("lets explicit personas override includeSecondary", async () => {
+    const dir = createPhaseSession("foo");
+    let result;
+    await captureConsole([], async () => {
+      result = await runPhase(dir, "discuss", {
+        task: "x",
+        flags: {},
+        personas: ["zilean"],
+        includeSecondary: true,
         synthesize: false,
       });
     });

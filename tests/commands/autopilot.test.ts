@@ -188,6 +188,27 @@ describe("runAutopilot — gate flow", () => {
     });
     expect(result?.phasesRun).toEqual(["discuss", "plan"]);
   });
+
+  it("--include-secondary passes primary and secondary worker count to gates", async () => {
+    const workerCounts: number[] = [];
+    await captureConsole([], async () => {
+      await runAutopilot(
+        ["PRD"],
+        {
+          feature: "secondary-workers",
+          synthesize: false,
+          "include-secondary": true,
+        },
+        {
+          gateProvider: async (ctx) => {
+            workerCounts.push(ctx.workersCount);
+            return { decision: "abort" };
+          },
+        },
+      );
+    });
+    expect(workerCounts).toEqual([3]);
+  });
 });
 
 describe("runAutopilot — STATE persistence", () => {

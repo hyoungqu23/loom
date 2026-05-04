@@ -163,6 +163,41 @@ describe("runPhaseCommand — synthesize default", () => {
   });
 });
 
+describe("runPhaseCommand — secondary personas", () => {
+  it("--dry-run --include-secondary prints primary and secondary runtime commands", async () => {
+    const output: string[] = [];
+    await captureConsole(output, async () => {
+      await runPhaseCommand(["discuss", "build a todo"], {
+        feature: "secondary-dry-run",
+        "dry-run": true,
+        "include-secondary": true,
+        synthesize: false,
+      });
+    });
+    const text = output.join("\n");
+    expect(text).toContain("ryze:");
+    expect(text).toContain("zilean:");
+    expect(text).toContain("local-fast:");
+  });
+
+  it("--personas takes precedence over --include-secondary", async () => {
+    const output: string[] = [];
+    await captureConsole(output, async () => {
+      await runPhaseCommand(["discuss", "build a todo"], {
+        feature: "secondary-override",
+        "dry-run": true,
+        "include-secondary": true,
+        personas: "zilean",
+        synthesize: false,
+      });
+    });
+    const text = output.join("\n");
+    expect(text).not.toContain("ryze:");
+    expect(text).toContain("zilean:");
+    expect(text).not.toContain("local-fast:");
+  });
+});
+
 describe("runPhaseCommand — phase coverage", () => {
   it.each<LoomPhase>([
     "discuss",

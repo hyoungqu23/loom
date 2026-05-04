@@ -14,9 +14,10 @@ Usage:
   loom export trajectory --feature <slug>
   loom phase <discuss|plan|build|review|verify|ship|reflect> "<task>" --feature <slug>
                                [--gate proceed|revise|abort] [--note "<text>"]
-                               [--personas <a,b>] [--synthesize false] [--dry-run]
+                               [--personas <a,b>] [--include-secondary]
+                               [--synthesize false] [--dry-run]
   loom autopilot "<task>" --feature <slug> [--start <phase>] [--end <phase>]
-                          [--synthesize false] [--dry-run]
+                          [--include-secondary] [--synthesize false] [--dry-run]
                           [--non-interactive --gate auto-proceed]
 
 Workflow:
@@ -34,6 +35,7 @@ Examples:
   loom cron list
   loom autopilot "환불 정책 신규 기능" --feature refund-policy
   loom phase discuss "기획 초안 정리" --feature billing-v2
+  loom phase discuss "기획 초안 정리" --feature billing-v2 --include-secondary
   loom phase plan    "API 설계"      --feature billing-v2
   loom phase review  --feature billing-v2 --gate proceed --note "보안 검토 통과"
   loom autopilot "Hotfix" --feature latest --start build --end review

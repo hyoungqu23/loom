@@ -53,6 +53,12 @@ describe("parseArgs", () => {
     });
   });
 
+  it("treats --include-secondary as a boolean flag", () => {
+    const parsed = parseArgs(["phase", "--include-secondary", "task-name"]);
+    expect(parsed.flags).toEqual({ "include-secondary": true });
+    expect(parsed.positionals).toEqual(["phase", "task-name"]);
+  });
+
   it("treats non-whitelisted --flag without value as boolean true at end of argv", () => {
     expect(parseArgs(["--verbose"]).flags).toEqual({ verbose: true });
   });

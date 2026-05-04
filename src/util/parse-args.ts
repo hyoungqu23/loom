@@ -11,6 +11,7 @@ const BOOLEAN_FLAGS: ReadonlySet<string> = new Set([
   "dry-run",
   "smoke",
   "failed",
+  "include-secondary",
   "non-interactive",
   "no-interactive",
 ]);

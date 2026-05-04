@@ -109,10 +109,16 @@ export async function runPhaseCommand(
   const synthesizeFlag = flags.synthesize;
   const synthesize =
     synthesizeFlag === undefined ? true : flagBool(synthesizeFlag, true);
+  const personas = flagString(flags.personas)
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
 
   const result = await runPhase(sessionDir, phase, {
     task,
     flags,
+    personas: personas.length > 0 ? personas : undefined,
+    includeSecondary: flagBool(flags["include-secondary"]),
     synthesize,
   });
 

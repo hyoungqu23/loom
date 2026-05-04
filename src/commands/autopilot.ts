@@ -143,6 +143,7 @@ export async function runAutopilot(
   const synthesizeFlag = flags.synthesize;
   const synthesize =
     synthesizeFlag === undefined ? true : flagBool(synthesizeFlag, true);
+  const includeSecondary = flagBool(flags["include-secondary"]);
 
   let sessionDir = resolvePhaseSession(feature);
   if (!sessionDir) {
@@ -184,6 +185,7 @@ export async function runAutopilot(
       const result = await runPhase(sessionDir, phase, {
         task,
         flags,
+        includeSecondary,
         synthesize,
         driver,
       });
