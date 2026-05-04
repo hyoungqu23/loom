@@ -14,6 +14,15 @@ export type MemoryEntry = {
   body: string;
 };
 
+export type MemoryCandidate = {
+  kind: MemoryKind;
+  source: string;
+  confidence: MemoryConfidence;
+  updatedAt: string;
+  tags: string[];
+  body: string;
+};
+
 const MEMORY_COMMENT_START = "<!-- loom-memory";
 const MEMORY_COMMENT_END = "-->";
 
@@ -135,4 +144,53 @@ export function renderRelevantMemory(maxChars = 2000): string {
   const rendered = lines.join("\n").trim();
   if (rendered.length <= maxChars) return rendered;
   return rendered.slice(0, maxChars).trimEnd() + "\n...(truncated)";
+}
+
+function slugifyBody(body: string): string {
+  return (
+    body
+      .toLowerCase()
+      .replace(/[^a-z0-9가-힣]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || "memory"
+  );
+}
+
+function candidateMarkdown(candidate: MemoryCandidate): string {
+  return [
+    "---",
+    `kind: ${candidate.kind}`,
+    `source: ${candidate.source}`,
+    `confidence: ${candidate.confidence}`,
+    `updatedAt: ${candidate.updatedAt}`,
+    `tags: ${candidate.tags.join(", ")}`,
+    "---",
+    "",
+    candidate.body,
+    "",
+  ].join("\n");
+}
+
+export function writeMemoryCandidates(candidates: MemoryCandidate[]): string[] {
+  if (candidates.length === 0) return [];
+  const root = ensureMemoryStore();
+  const dir = path.join(root, "candidates");
+  const written: string[] = [];
+  const seenBodies = new Set<string>();
+
+  for (const candidate of candidates) {
+    const key = candidate.body.trim().toLowerCase();
+    if (!key || seenBodies.has(key)) continue;
+    seenBodies.add(key);
+    const slug = slugifyBody(candidate.body);
+    const filePath = path.join(
+      dir,
+      `${candidate.updatedAt.replace(/[:.]/g, "-")}-${candidate.kind}-${slug}.md`,
+    );
+    if (fs.existsSync(filePath)) continue;
+    fs.writeFileSync(filePath, candidateMarkdown(candidate), "utf8");
+    written.push(filePath);
+  }
+
+  return written;
 }

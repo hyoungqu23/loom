@@ -8,6 +8,7 @@ import {
   isPlanDeltaEmpty,
   mergeContext,
   mergePlan,
+  extractMemoryCandidatesFromReflectOutput,
 } from "../../src/phases/extract";
 
 describe("extractContextFromOutput", () => {
@@ -194,5 +195,41 @@ describe("mergePlan", () => {
       acceptanceCriteria: ["AC new"],
     });
     expect(merged.approach).toBe("incremental migration");
+  });
+});
+
+describe("extractMemoryCandidatesFromReflectOutput", () => {
+  it("extracts learnings, procedures, and user preferences from reflect output", () => {
+    const candidates = extractMemoryCandidatesFromReflectOutput(`
+## 배운 점
+- Autopilot needs explicit gate policy in non-TTY mode.
+
+## 재사용 절차
+- Run npm run check before committing.
+
+## 사용자 선호
+- Always respond in Korean.
+`);
+
+    expect(candidates).toEqual([
+      {
+        kind: "project",
+        sourceSection: "배운 점",
+        body: "Autopilot needs explicit gate policy in non-TTY mode.",
+        tags: ["reflect", "learning"],
+      },
+      {
+        kind: "procedure",
+        sourceSection: "재사용 절차",
+        body: "Run npm run check before committing.",
+        tags: ["reflect", "procedure"],
+      },
+      {
+        kind: "user",
+        sourceSection: "사용자 선호",
+        body: "Always respond in Korean.",
+        tags: ["reflect", "preference"],
+      },
+    ]);
   });
 });

@@ -26,12 +26,14 @@ import {
 import { loadPhaseMatrix, personasForPhase } from "./matrix";
 import {
   extractContextFromOutput,
+  extractMemoryCandidatesFromReflectOutput,
   extractPlanFromOutput,
   isContextDeltaEmpty,
   isPlanDeltaEmpty,
   mergeContext,
   mergePlan,
 } from "./extract";
+import { writeMemoryCandidates } from "../memory/store";
 
 export type PhaseRunOptions = {
   task: string;
@@ -137,6 +139,29 @@ function autoExtractPlan(
   if (touched && plan) {
     writePlan(sessionDir, plan);
     driver.log(`[loom] PLAN.md updated from ${workers.length} worker(s)`);
+  }
+}
+
+function autoExtractMemoryCandidates(
+  sessionDir: string,
+  workers: WorkerResult[],
+  driver: FrameDriver,
+): void {
+  const feature = path.basename(sessionDir);
+  const now = new Date().toISOString();
+  const candidates = workers.flatMap((w) =>
+    extractMemoryCandidatesFromReflectOutput(w.stdout || "").map((candidate) => ({
+      kind: candidate.kind,
+      source: `reflect:${feature}:${candidate.sourceSection}`,
+      confidence: "medium" as const,
+      updatedAt: now,
+      tags: candidate.tags,
+      body: candidate.body,
+    })),
+  );
+  const written = writeMemoryCandidates(candidates);
+  if (written.length > 0) {
+    driver.log(`[loom] ${written.length} memory candidate(s) written`);
   }
 }
 
@@ -279,6 +304,8 @@ export async function runPhase(
       autoExtractContext(sessionDir, workers, driver);
     } else if (phase === "plan") {
       autoExtractPlan(sessionDir, workers, driver);
+    } else if (phase === "reflect") {
+      autoExtractMemoryCandidates(sessionDir, workers, driver);
     }
 
     const stateAfter = advanceState(sessionDir, phase);

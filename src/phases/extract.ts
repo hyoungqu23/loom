@@ -18,6 +18,12 @@ import { PhasePlan, SessionContext } from "../types";
 
 export type ExtractedContext = Partial<SessionContext>;
 export type ExtractedPlan = Partial<PhasePlan>;
+export type ExtractedMemoryCandidate = {
+  kind: "user" | "project" | "procedure";
+  sourceSection: string;
+  body: string;
+  tags: string[];
+};
 
 const HEADING = /^#{2,3}\s+(.+?)\s*$/;
 
@@ -65,6 +71,12 @@ const PLAN_ALIASES: AliasMap = {
   ],
   risks: ["리스크", "risks", "위험"],
   testPlan: ["test plan", "테스트 계획", "테스트 plan"],
+};
+
+const MEMORY_ALIASES: AliasMap = {
+  learning: ["배운 점", "learnings", "lessons learned", "learning"],
+  procedure: ["재사용 절차", "procedures", "procedure", "reusable procedure"],
+  preference: ["사용자 선호", "user preferences", "preferences", "preference"],
 };
 
 function lookupCanonical(aliases: AliasMap, heading: string): string | null {
@@ -297,4 +309,39 @@ export function isPlanDeltaEmpty(delta: ExtractedPlan): boolean {
     !(delta.testPlan && delta.testPlan.length) &&
     !(delta.risks && delta.risks.length)
   );
+}
+
+export function extractMemoryCandidatesFromReflectOutput(
+  md: string,
+): ExtractedMemoryCandidate[] {
+  const sections = splitSections(md, MEMORY_ALIASES);
+  const out: ExtractedMemoryCandidate[] = [];
+  for (const { canonical, body } of sections) {
+    const items = bullets(body);
+    for (const item of items) {
+      if (canonical === "learning") {
+        out.push({
+          kind: "project",
+          sourceSection: "배운 점",
+          body: item,
+          tags: ["reflect", "learning"],
+        });
+      } else if (canonical === "procedure") {
+        out.push({
+          kind: "procedure",
+          sourceSection: "재사용 절차",
+          body: item,
+          tags: ["reflect", "procedure"],
+        });
+      } else if (canonical === "preference") {
+        out.push({
+          kind: "user",
+          sourceSection: "사용자 선호",
+          body: item,
+          tags: ["reflect", "preference"],
+        });
+      }
+    }
+  }
+  return out;
 }

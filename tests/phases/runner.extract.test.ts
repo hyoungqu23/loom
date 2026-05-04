@@ -226,4 +226,46 @@ GraphQL 게이트웨이 도입.
 
     expect(fs.existsSync(path.join(dir, "CONTEXT.md"))).toBe(false);
   });
+
+  it("writes memory candidates from reflect worker output", async () => {
+    stubBin = writeStub(`
+## 배운 점
+- Non-interactive autopilot needs explicit gate policy.
+
+## 재사용 절차
+- Run npm run check before commits.
+
+## 사용자 선호
+- Always respond in Korean.
+`.trim());
+    saveWorkspaceConfig({
+      runtimes: {
+        codex: { command: stubBin, extraArgs: [] },
+        claude: { command: stubBin, extraArgs: [] },
+        gemini: { command: stubBin, extraArgs: [] },
+        ollama: { command: stubBin, extraArgs: [] },
+      },
+    });
+    clearDefaultsCache();
+
+    const dir = createPhaseSession("reflect-memory");
+    await captureConsole([], async () => {
+      await runPhase(dir, "reflect", {
+        task: "x",
+        flags: {},
+        synthesize: false,
+      });
+    });
+
+    const candidatesDir = path.join(tmp, ".loom", "memory", "candidates");
+    const files = fs.readdirSync(candidatesDir).sort();
+    expect(files.length).toBe(3);
+    const bodies = files.map((file) =>
+      fs.readFileSync(path.join(candidatesDir, file), "utf8"),
+    );
+    expect(bodies.join("\n")).toContain("kind: project");
+    expect(bodies.join("\n")).toContain("kind: procedure");
+    expect(bodies.join("\n")).toContain("kind: user");
+    expect(bodies.join("\n")).toContain("Always respond in Korean.");
+  });
 });
