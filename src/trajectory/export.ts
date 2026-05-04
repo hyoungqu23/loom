@@ -3,6 +3,7 @@ import * as path from "path";
 import { loadState, resolvePhaseSession } from "../phases/session";
 import { loadMetricEvents, MetricEvent } from "../metrics/events";
 import { PhaseState } from "../types";
+import { redactText, redactValue } from "../util/redact";
 
 export type TrajectoryExport = {
   feature: string;
@@ -20,35 +21,9 @@ export type TrajectoryExport = {
   metrics: MetricEvent[];
 };
 
-const SECRET_PATTERNS: RegExp[] = [
-  /\b[A-Z0-9_]*(SECRET|TOKEN|PASSWORD|API_KEY)[A-Z0-9_]*\s*=\s*[^\s`'"]+/gi,
-  /\bsk-[A-Za-z0-9_-]{12,}\b/g,
-];
-
-function redact(text: string): string {
-  let out = text;
-  for (const pattern of SECRET_PATTERNS) {
-    out = out.replace(pattern, "[REDACTED]");
-  }
-  return out;
-}
-
-function redactValue<T>(value: T): T {
-  if (typeof value === "string") return redact(value) as T;
-  if (Array.isArray(value)) return value.map((item) => redactValue(item)) as T;
-  if (value && typeof value === "object") {
-    const out: Record<string, unknown> = {};
-    for (const [key, child] of Object.entries(value)) {
-      out[key] = redactValue(child);
-    }
-    return out as T;
-  }
-  return value;
-}
-
 function readOptional(filePath: string): string | null {
   if (!fs.existsSync(filePath)) return null;
-  return redact(fs.readFileSync(filePath, "utf8"));
+  return redactText(fs.readFileSync(filePath, "utf8"));
 }
 
 function collectWorkerOutputs(sessionDir: string): TrajectoryExport["workerOutputs"] {
@@ -64,7 +39,7 @@ function collectWorkerOutputs(sessionDir: string): TrajectoryExport["workerOutpu
       outputs.push({
         phase,
         file: filePath,
-        body: redact(fs.readFileSync(filePath, "utf8")),
+        body: redactText(fs.readFileSync(filePath, "utf8")),
       });
     }
   }

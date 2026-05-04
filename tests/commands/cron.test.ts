@@ -47,6 +47,25 @@ describe("runCronCommand", () => {
     expect(text).toContain("0 2 * * *");
   });
 
+  it("redacts secrets from listed cron command args", async () => {
+    addCronJob({
+      id: "webhook",
+      command: "true",
+      args: ["WEBHOOK_TOKEN=abc123"],
+      schedule: "@manual",
+      cwd: tmp,
+      feature: "webhook",
+      enabled: true,
+    });
+
+    const buf: string[] = [];
+    await captureConsole(buf, () => runCronCommand(["list"], {}));
+
+    const text = buf.join("\n");
+    expect(text).toContain("[REDACTED]");
+    expect(text).not.toContain("WEBHOOK_TOKEN=abc123");
+  });
+
   it("runs a stored cron job by id", async () => {
     addCronJob({
       id: "safe-command",

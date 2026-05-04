@@ -1,5 +1,6 @@
 import { Flags } from "../types";
 import { listCronJobs, runCronJob } from "../cron/jobs";
+import { redactText } from "../util/redact";
 
 export async function runCronCommand(positionals: string[], _flags: Flags): Promise<void> {
   const subcommand = positionals[0] || "list";
@@ -12,7 +13,7 @@ export async function runCronCommand(positionals: string[], _flags: Flags): Prom
     }
     for (const job of jobs) {
       console.log(
-        `${job.id.padEnd(24)} ${job.enabled ? "enabled " : "disabled"} ${job.schedule.padEnd(12)} ${job.command} ${job.args.join(" ")} last=${job.lastStatus ?? "never"}`,
+        `${job.id.padEnd(24)} ${job.enabled ? "enabled " : "disabled"} ${job.schedule.padEnd(12)} ${job.command} ${redactText(job.args.join(" "))} last=${job.lastStatus ?? "never"}`,
       );
     }
     return;
