@@ -7,6 +7,7 @@ import { main } from "../src/cli";
 import { runCliCommand } from "../src/cli";
 import { clearDefaultsCache } from "../src/config";
 import { createPhaseSession } from "../src/phases/session";
+import { addCronJob } from "../src/cron/jobs";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
@@ -138,5 +139,36 @@ describe("runCliCommand", () => {
     expect(result.status).toBe("ok");
     expect(result.stdout).toContain("Memory Candidates");
     expect(result.stderr).toBe("");
+  });
+
+  it("serializes command adapter executions so captures do not overlap", async () => {
+    addCronJob({
+      id: "fast",
+      command: "node",
+      args: ["-e", "process.exit(0)"],
+      schedule: "@manual",
+      cwd: tmp,
+      feature: "fast",
+      enabled: true,
+    });
+    addCronJob({
+      id: "slow",
+      command: "node",
+      args: ["-e", "setTimeout(() => process.exit(0), 40)"],
+      schedule: "@manual",
+      cwd: tmp,
+      feature: "slow",
+      enabled: true,
+    });
+
+    const first = runCliCommand(["cron", "run", "fast"]);
+    const second = runCliCommand(["cron", "run", "slow"]);
+
+    const [a, b] = await Promise.all([first, second]);
+
+    expect(a.stdout).toContain("cron fast status=0");
+    expect(a.stdout).not.toContain("cron slow");
+    expect(b.stdout).toContain("cron slow status=0");
+    expect(b.stdout).not.toContain("cron fast");
   });
 });

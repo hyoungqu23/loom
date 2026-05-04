@@ -81,7 +81,9 @@ export type CliCommandResult = {
   stderr: string;
 };
 
-export async function runCliCommand(argv: string[]): Promise<CliCommandResult> {
+let cliCommandQueue: Promise<void> = Promise.resolve();
+
+async function runCliCommandIsolated(argv: string[]): Promise<CliCommandResult> {
   const stdout: string[] = [];
   const stderr: string[] = [];
   const originalLog = console.log;
@@ -94,14 +96,36 @@ export async function runCliCommand(argv: string[]): Promise<CliCommandResult> {
   };
   try {
     await main(argv);
-    return { status: "ok", stdout: stdout.join("\n"), stderr: stderr.join("\n") };
+    return {
+      status: "ok",
+      stdout: stdout.join("\n"),
+      stderr: stderr.join("\n"),
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     stderr.push(message);
-    return { status: "error", stdout: stdout.join("\n"), stderr: stderr.join("\n") };
+    return {
+      status: "error",
+      stdout: stdout.join("\n"),
+      stderr: stderr.join("\n"),
+    };
   } finally {
     console.log = originalLog;
     console.error = originalError;
+  }
+}
+
+export async function runCliCommand(argv: string[]): Promise<CliCommandResult> {
+  const previous = cliCommandQueue;
+  let release!: () => void;
+  cliCommandQueue = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await previous;
+  try {
+    return await runCliCommandIsolated(argv);
+  } finally {
+    release();
   }
 }
 
