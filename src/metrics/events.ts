@@ -3,7 +3,7 @@ import * as path from "path";
 import { GateDecision, LoomPhase } from "../types";
 import { ensureWorkspaceState } from "../workspace";
 
-export type MetricEvent = {
+export type PhaseMetric = {
   type: "phase";
   feature: string;
   phase: LoomPhase;
@@ -14,6 +14,16 @@ export type MetricEvent = {
   skills?: string[];
   at?: string;
 };
+
+export type CronMetric = {
+  type: "cron";
+  id: string;
+  status: number | null;
+  durationMs: number;
+  at?: string;
+};
+
+export type MetricEvent = PhaseMetric | CronMetric;
 
 export type SkillReviewSummary = {
   skill: string;

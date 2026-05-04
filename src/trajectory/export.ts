@@ -59,6 +59,8 @@ export function exportTrajectory(feature: string): TrajectoryExport {
       plan: readOptional(path.join(sessionDir, "PLAN.md")),
     },
     workerOutputs: collectWorkerOutputs(sessionDir),
-    metrics: loadMetricEvents().filter((event) => event.feature === state.feature),
+    metrics: loadMetricEvents().filter(
+      (event) => event.type === "phase" && event.feature === state.feature,
+    ),
   });
 }

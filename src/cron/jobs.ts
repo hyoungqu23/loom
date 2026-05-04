@@ -10,6 +10,8 @@ import { readJson, writeJson } from "../util/json";
 import { runSpec } from "../engine/spawn";
 import { DEFAULT_RUNTIME_TIMEOUT_MS } from "../engine/constants";
 import { classifyCommandRisk } from "../engine/risk";
+import { redactText } from "../util/redact";
+import { appendMetricEvent } from "../metrics/events";
 
 export type CronJob = {
   id: string;
@@ -26,6 +28,38 @@ export type CronJob = {
 
 export function cronJobsPath(): string {
   return path.join(ensureWorkspaceState(), "cron", "jobs.json");
+}
+
+export function cronRunsRoot(): string {
+  return path.join(ensureWorkspaceState(), "cron", "runs");
+}
+
+const CRON_RUN_RETENTION_DAYS = 30;
+
+function cronRunDir(id: string): string {
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const safeId = id.replace(/[^A-Za-z0-9_.-]/g, "_");
+  const dir = path.join(cronRunsRoot(), `${stamp}-${safeId}`);
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function pruneOldCronRuns(): void {
+  const root = cronRunsRoot();
+  if (!fs.existsSync(root)) return;
+  const cutoff = Date.now() - CRON_RUN_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  for (const name of fs.readdirSync(root)) {
+    const full = path.join(root, name);
+    let stat: fs.Stats;
+    try {
+      stat = fs.statSync(full);
+    } catch {
+      continue;
+    }
+    if (stat.mtimeMs < cutoff) {
+      fs.rmSync(full, { recursive: true, force: true });
+    }
+  }
 }
 
 function normalizeJob(job: Omit<CronJob, "lastRunAt" | "lastStatus"> & Partial<CronJob>): CronJob {
@@ -79,12 +113,39 @@ export async function runCronJob(id: string): Promise<RuntimeResult> {
     args: job.args,
     cwd: job.cwd,
   };
+  const dir = cronRunDir(id);
+  const startedAt = new Date().toISOString();
+  const startedAtMs = Date.now();
   const result = await runSpec(spec, DEFAULT_RUNTIME_TIMEOUT_MS);
+  const finishedAt = new Date().toISOString();
+  const durationMs = Date.now() - startedAtMs;
+
+  fs.writeFileSync(path.join(dir, "stdout.log"), redactText(result.stdout));
+  fs.writeFileSync(path.join(dir, "stderr.log"), redactText(result.stderr));
+  writeJson(path.join(dir, "result.json"), {
+    id,
+    command: job.command,
+    args: job.args,
+    status: result.status,
+    signal: result.signal,
+    error: result.error ? String(result.error) : null,
+    startedAt,
+    finishedAt,
+    durationMs,
+  });
+
   jobs[idx] = {
     ...job,
-    lastRunAt: new Date().toISOString(),
+    lastRunAt: finishedAt,
     lastStatus: result.status,
   };
   saveJobs(jobs);
+  appendMetricEvent({
+    type: "cron",
+    id,
+    status: result.status,
+    durationMs,
+  });
+  pruneOldCronRuns();
   return result;
 }

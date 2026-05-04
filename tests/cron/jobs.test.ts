@@ -5,9 +5,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   addCronJob,
   cronJobsPath,
+  cronRunsRoot,
   listCronJobs,
   runCronJob,
 } from "../../src/cron/jobs";
+import { loadMetricEvents } from "../../src/metrics/events";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
@@ -151,5 +153,63 @@ describe("cron jobs", () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("SECRET_TOKEN=abc");
+  });
+
+  it("persists stdout / stderr / result.json per run with redaction", async () => {
+    fs.writeFileSync(path.join(tmp, ".env"), "SECRET_TOKEN=abc\n", "utf8");
+    addCronJob({
+      id: "redact-run",
+      command: "cat",
+      args: [".env"],
+      schedule: "@manual",
+      cwd: tmp,
+      feature: "redact-run",
+      enabled: true,
+      approvalMode: "allow-risky",
+    });
+
+    await runCronJob("redact-run");
+
+    const root = cronRunsRoot();
+    const runs = fs.readdirSync(root).filter((name) => name.endsWith("-redact-run"));
+    expect(runs.length).toBe(1);
+    const dir = path.join(root, runs[0]);
+
+    const stdout = fs.readFileSync(path.join(dir, "stdout.log"), "utf8");
+    expect(stdout).not.toContain("SECRET_TOKEN=abc");
+    expect(stdout).toContain("[REDACTED]");
+
+    const result = JSON.parse(
+      fs.readFileSync(path.join(dir, "result.json"), "utf8"),
+    );
+    expect(result.id).toBe("redact-run");
+    expect(result.status).toBe(0);
+    expect(result.command).toBe("cat");
+    expect(result.args).toEqual([".env"]);
+    expect(typeof result.durationMs).toBe("number");
+    expect(result.startedAt).toMatch(/T/);
+    expect(result.finishedAt).toMatch(/T/);
+  });
+
+  it("emits a cron metric event per run", async () => {
+    addCronJob({
+      id: "metric-run",
+      command: "true",
+      args: [],
+      schedule: "@manual",
+      cwd: tmp,
+      feature: "metric-run",
+      enabled: true,
+    });
+
+    await runCronJob("metric-run");
+
+    const events = loadMetricEvents().filter((e) => e.type === "cron");
+    expect(events.length).toBe(1);
+    expect(events[0]).toMatchObject({
+      type: "cron",
+      id: "metric-run",
+      status: 0,
+    });
   });
 });
