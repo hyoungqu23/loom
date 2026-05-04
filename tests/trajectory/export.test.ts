@@ -54,6 +54,7 @@ describe("exportTrajectory", () => {
       phase: "plan",
       decision: "proceed",
       at: "2026-05-04T00:00:00.000Z",
+      note: "temporary API_KEY=abc123 for reproduction",
     });
     writeState(dir, state);
     appendMetricEvent({
@@ -64,6 +65,7 @@ describe("exportTrajectory", () => {
       workerCount: 1,
       failedCount: 1,
       skills: ["test-driven-development"],
+      note: "PASSWORD=hunter2",
     });
 
     const trajectory = exportTrajectory("auth-tokens");
@@ -75,5 +77,7 @@ describe("exportTrajectory", () => {
     expect(trajectory.workerOutputs[0].body).toContain("[REDACTED]");
     expect(trajectory.metrics[0].skills).toContain("test-driven-development");
     expect(JSON.stringify(trajectory)).not.toContain("SECRET_TOKEN=abc");
+    expect(JSON.stringify(trajectory)).not.toContain("API_KEY=abc123");
+    expect(JSON.stringify(trajectory)).not.toContain("PASSWORD=hunter2");
   });
 });

@@ -33,6 +33,19 @@ function redact(text: string): string {
   return out;
 }
 
+function redactValue<T>(value: T): T {
+  if (typeof value === "string") return redact(value) as T;
+  if (Array.isArray(value)) return value.map((item) => redactValue(item)) as T;
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(value)) {
+      out[key] = redactValue(child);
+    }
+    return out as T;
+  }
+  return value;
+}
+
 function readOptional(filePath: string): string | null {
   if (!fs.existsSync(filePath)) return null;
   return redact(fs.readFileSync(filePath, "utf8"));
@@ -62,7 +75,7 @@ export function exportTrajectory(feature: string): TrajectoryExport {
   const sessionDir = resolvePhaseSession(feature);
   if (!sessionDir) throw new Error(`feature session not found: ${feature}`);
   const state = loadState(sessionDir);
-  return {
+  return redactValue({
     feature: state.feature,
     sessionDir,
     state,
@@ -72,5 +85,5 @@ export function exportTrajectory(feature: string): TrajectoryExport {
     },
     workerOutputs: collectWorkerOutputs(sessionDir),
     metrics: loadMetricEvents().filter((event) => event.feature === state.feature),
-  };
+  });
 }
