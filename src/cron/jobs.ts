@@ -66,7 +66,7 @@ export async function runCronJob(id: string): Promise<RuntimeResult> {
   const job = jobs[idx];
   if (!job.enabled) throw new Error(`cron job disabled: ${id}`);
   const risk = classifyCommandRisk({ command: job.command, args: job.args });
-  if (risk.level === "high" && job.approvalMode !== "allow-risky") {
+  if (risk.level !== "safe" && job.approvalMode !== "allow-risky") {
     throw new Error(`cron job blocked by approval policy: ${risk.reason}`);
   }
 

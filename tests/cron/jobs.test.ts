@@ -33,8 +33,8 @@ describe("cron jobs", () => {
   it("persists jobs with the cron schema", () => {
     addCronJob({
       id: "nightly-qa",
-      command: "node",
-      args: ["--version"],
+      command: "true",
+      args: [],
       schedule: "0 2 * * *",
       cwd: tmp,
       feature: "nightly-qa",
@@ -45,7 +45,7 @@ describe("cron jobs", () => {
     expect(listCronJobs()).toEqual([
       expect.objectContaining({
         id: "nightly-qa",
-        command: "node",
+        command: "true",
         schedule: "0 2 * * *",
         enabled: true,
         lastRunAt: null,
@@ -56,16 +56,16 @@ describe("cron jobs", () => {
 
   it("runs enabled jobs and records lastRunAt / lastStatus", async () => {
     addCronJob({
-      id: "node-version",
-      command: "node",
-      args: ["--version"],
+      id: "safe-command",
+      command: "true",
+      args: [],
       schedule: "@manual",
       cwd: tmp,
-      feature: "node-version",
+      feature: "safe-command",
       enabled: true,
     });
 
-    const result = await runCronJob("node-version");
+    const result = await runCronJob("safe-command");
 
     expect(result.status).toBe(0);
     const [job] = listCronJobs();
@@ -76,8 +76,8 @@ describe("cron jobs", () => {
   it("does not run disabled jobs", async () => {
     addCronJob({
       id: "disabled",
-      command: "node",
-      args: ["--version"],
+      command: "true",
+      args: [],
       schedule: "@manual",
       cwd: tmp,
       feature: "disabled",
@@ -100,6 +100,22 @@ describe("cron jobs", () => {
     });
 
     await expect(runCronJob("read-secret")).rejects.toThrow(
+      /blocked by approval policy/,
+    );
+  });
+
+  it("blocks medium-risk jobs unless explicitly approved", async () => {
+    addCronJob({
+      id: "network",
+      command: "curl",
+      args: ["https://example.com"],
+      schedule: "@manual",
+      cwd: tmp,
+      feature: "network",
+      enabled: true,
+    });
+
+    await expect(runCronJob("network")).rejects.toThrow(
       /blocked by approval policy/,
     );
   });

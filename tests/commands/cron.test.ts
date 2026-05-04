@@ -30,8 +30,8 @@ describe("runCronCommand", () => {
   it("lists stored cron jobs", async () => {
     addCronJob({
       id: "nightly-qa",
-      command: "node",
-      args: ["--version"],
+      command: "true",
+      args: [],
       schedule: "0 2 * * *",
       cwd: tmp,
       feature: "nightly-qa",
@@ -49,17 +49,17 @@ describe("runCronCommand", () => {
 
   it("runs a stored cron job by id", async () => {
     addCronJob({
-      id: "node-version",
-      command: "node",
-      args: ["--version"],
+      id: "safe-command",
+      command: "true",
+      args: [],
       schedule: "@manual",
       cwd: tmp,
-      feature: "node-version",
+      feature: "safe-command",
       enabled: true,
     });
 
     const buf: string[] = [];
-    await captureConsole(buf, () => runCronCommand(["run", "node-version"], {}));
+    await captureConsole(buf, () => runCronCommand(["run", "safe-command"], {}));
 
     expect(buf.join("\n")).toContain("status=0");
   });
