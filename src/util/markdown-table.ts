@@ -10,7 +10,7 @@
  *  - Markdown table escape `\|` is honored: `/(a\|b)/` reads as `/(a|b)/`.
  */
 
-const PIPE_TOKEN = "";
+const PIPE_TOKEN = "\u0001";
 
 export type MarkdownTableMapper<T> = (cells: string[]) => T | null;
 

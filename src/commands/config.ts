@@ -8,7 +8,6 @@ import {
 import {
   ensureWorkspaceState,
   workspaceConfigPath,
-  defaultsPath,
 } from "../workspace";
 import {
   getNestedValue,
@@ -67,7 +66,7 @@ export function runConfigCommand(args: string[], flags: Flags): void {
     }
     const current: JsonObject = fs.existsSync(workspaceConfigPath())
       ? loadWorkspaceConfig()
-      : JSON.parse(fs.readFileSync(defaultsPath(), "utf8"));
+      : {};
     const value = parseConfigValue(rawValue);
     setNestedValue(current, normalizeConfigPath(key), value);
     saveWorkspaceConfig(current);

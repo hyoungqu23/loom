@@ -3,8 +3,8 @@
  * Loom 페르소나 비결정적 평가 러너.
  *
  * 사용:
- *   tsx eval/run-personas.ts                       # codex 런타임 사용
- *   tsx eval/run-personas.ts --runtime claude     # claude 사용
+ *   tsx eval/run-personas.ts                       # 각 페르소나의 기본 런타임 사용
+ *   tsx eval/run-personas.ts --runtime claude      # 모든 케이스를 claude로 강제
  *   tsx eval/run-personas.ts --case kayle-finds-sql-injection  # 단일 케이스
  *
  * 결과는 JSON 한 줄씩 stdout에 stream 출력. summary는 마지막 한 줄.
@@ -16,9 +16,12 @@
  */
 import * as fs from "fs";
 import * as path from "path";
-import { runAsk } from "../src/commands/ask";
-import { parseArgs } from "../src/util/parse-args";
 import { loadDefaults } from "../src/config";
+import { loadAgent } from "../src/agents/load";
+import { withRolePrompt } from "../src/agents/prompt";
+import { runRuntime } from "../src/engine";
+import { parseArgs } from "../src/util/parse-args";
+import { workspaceRoot } from "../src/workspace";
 
 type PersonaCase = {
   id: string;
@@ -30,25 +33,21 @@ type PersonaCase = {
 
 type CaseFile = { cases: PersonaCase[] };
 
-async function captureAskOutput(
-  agent: string,
+async function runPersonaCase(
+  agentName: string,
   task: string,
-  runtime: string,
+  runtimeOverride: string | null,
 ): Promise<string> {
-  const lines: string[] = [];
-  const origLog = console.log;
-  const origErr = console.error;
-  console.log = (...parts: unknown[]) => {
-    lines.push(parts.map((p) => String(p)).join(" "));
-  };
-  console.error = () => {};
-  try {
-    await runAsk(["ask", agent, task], { runtime });
-  } finally {
-    console.log = origLog;
-    console.error = origErr;
-  }
-  return lines.join("\n");
+  const agent = loadAgent(agentName);
+  const runtime = runtimeOverride || agent.runtime;
+  const prompt = withRolePrompt(task, agent, agentName);
+  const { result } = await runRuntime(runtime, prompt, {
+    cwd: workspaceRoot(),
+    model: agent.model,
+    effort: agent.effort,
+    agent: agentName,
+  });
+  return result.stdout;
 }
 
 function scoreCase(
@@ -72,7 +71,8 @@ function scoreCase(
 
 async function main(): Promise<void> {
   const { flags } = parseArgs(process.argv.slice(2));
-  const runtime = typeof flags.runtime === "string" ? flags.runtime : "codex";
+  const runtimeOverride =
+    typeof flags.runtime === "string" ? flags.runtime : null;
   const onlyCase = typeof flags.case === "string" ? flags.case : null;
 
   const casesPath = path.join(__dirname, "personas", "cases.json");
@@ -90,16 +90,16 @@ async function main(): Promise<void> {
   for (const c of data.cases) {
     if (onlyCase && c.id !== onlyCase) continue;
     if (!defaults.agents[c.agent]) {
-      console.error(`SKIP ${c.id}: agent ${c.agent} not configured`);
+      process.stderr.write(`SKIP ${c.id}: agent ${c.agent} not configured\n`);
       continue;
     }
     process.stderr.write(`[run] ${c.id} agent=${c.agent}\n`);
     let output = "";
     try {
-      output = await captureAskOutput(c.agent, c.task, runtime);
+      output = await runPersonaCase(c.agent, c.task, runtimeOverride);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`FAIL ${c.id}: ${message}`);
+      process.stderr.write(`FAIL ${c.id}: ${message}\n`);
       continue;
     }
     const { hits, misses, antiHits } = scoreCase(
@@ -136,6 +136,6 @@ async function main(): Promise<void> {
 
 main().catch((err: unknown) => {
   const message = err instanceof Error ? err.stack || err.message : String(err);
-  console.error(message);
+  process.stderr.write(`${message}\n`);
   process.exit(1);
 });
