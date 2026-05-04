@@ -87,6 +87,20 @@ describe("cron jobs", () => {
     await expect(runCronJob("disabled")).rejects.toThrow(/disabled/);
   });
 
+  it("rejects jobs with cwd outside the active workspace", () => {
+    expect(() =>
+      addCronJob({
+        id: "outside",
+        command: "true",
+        args: [],
+        schedule: "@manual",
+        cwd: os.tmpdir(),
+        feature: "outside",
+        enabled: true,
+      }),
+    ).toThrow(/escapes workspace/);
+  });
+
   it("blocks high-risk jobs unless explicitly approved", async () => {
     fs.writeFileSync(path.join(tmp, ".env"), "SECRET_TOKEN=abc\n", "utf8");
     addCronJob({

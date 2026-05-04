@@ -1,7 +1,11 @@
 import * as path from "path";
 import * as fs from "fs";
 import { RuntimeResult, RuntimeSpec } from "../types";
-import { ensureWorkspaceState, workspaceRoot } from "../workspace";
+import {
+  ensureWithinWorkspace,
+  ensureWorkspaceState,
+  workspaceRoot,
+} from "../workspace";
 import { readJson, writeJson } from "../util/json";
 import { runSpec } from "../engine/spawn";
 import { DEFAULT_RUNTIME_TIMEOUT_MS } from "../engine/constants";
@@ -30,7 +34,7 @@ function normalizeJob(job: Omit<CronJob, "lastRunAt" | "lastStatus"> & Partial<C
     command: job.command,
     args: job.args || [],
     schedule: job.schedule,
-    cwd: path.resolve(job.cwd || workspaceRoot()),
+    cwd: ensureWithinWorkspace(path.resolve(job.cwd || workspaceRoot()), "cron.cwd"),
     feature: job.feature,
     enabled: job.enabled !== false,
     approvalMode: job.approvalMode,
