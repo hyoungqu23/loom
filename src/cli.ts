@@ -11,6 +11,7 @@ import { printAgents, printInstalledSkills } from "./commands/listings";
 import { printHelp } from "./commands/help";
 import { runMemoryCommand } from "./commands/memory";
 import { runMetricsCommand } from "./commands/metrics";
+import { runExportCommand } from "./commands/export";
 import { runRuntime } from "./engine";
 import { buildRuntimeCommand } from "./runtimes";
 
@@ -43,6 +44,9 @@ const HANDLERS: { [key: string]: Handler } = {
   },
   metrics: (positionals, flags) => {
     runMetricsCommand(positionals.slice(1), flags);
+  },
+  export: (positionals, flags) => {
+    runExportCommand(positionals.slice(1), flags);
   },
 };
 

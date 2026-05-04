@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { captureConsole } from "../src/util/capture";
 import { main } from "../src/cli";
 import { clearDefaultsCache } from "../src/config";
+import { createPhaseSession } from "../src/phases/session";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
@@ -70,6 +71,15 @@ describe("main", () => {
     const buf: string[] = [];
     await captureConsole(buf, () => main(["metrics", "summary"]));
     expect(buf.join("\n")).toMatch(/Metrics Summary/);
+  });
+
+  it("dispatches to export command", async () => {
+    createPhaseSession("exportable");
+    const buf: string[] = [];
+    await captureConsole(buf, () =>
+      main(["export", "trajectory", "--feature", "exportable"]),
+    );
+    expect(JSON.parse(buf.join("\n")).feature).toBe("exportable");
   });
 
   it("dispatches `config show` to the config command", async () => {

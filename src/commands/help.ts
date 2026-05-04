@@ -9,6 +9,8 @@ Usage:
   loom agents
   loom skills
   loom memory list | search "<query>" | promote <id> --type user|project|procedure | reject <id>
+  loom metrics summary
+  loom export trajectory --feature <slug>
   loom phase <discuss|plan|build|review|verify|ship|reflect> "<task>" --feature <slug>
                                [--gate proceed|revise|abort] [--note "<text>"]
                                [--personas <a,b>] [--synthesize false] [--dry-run]
