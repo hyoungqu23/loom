@@ -2,6 +2,7 @@ import { Flags } from "../types";
 import { loadDefaults } from "../config";
 import { commandExists } from "../util/shell";
 import { runtimeVersion } from "../runtimes";
+import { runtimeCapabilityRows } from "../runtimes/capabilities";
 import { runRuntime } from "../engine";
 import { workspaceRoot } from "../workspace";
 import { flagBool, flagNumber, flagString } from "../util/parse-args";
@@ -44,6 +45,7 @@ export async function runDoctor(flags: Flags): Promise<void> {
     console.log(
       `${runtime.padEnd(7)} ${ansi.green("OK")}    ${found.path}    ${ansi.dim(versionText.split("\n")[0])}`,
     );
+    console.log(`         ${runtimeCapabilityRows([runtime])[0].trim()}`);
 
     if (!smoke) continue;
     const prompt = smokePrompt(runtime);

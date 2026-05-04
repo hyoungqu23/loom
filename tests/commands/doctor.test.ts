@@ -42,6 +42,21 @@ describe("runDoctor", () => {
     expect(buf.join("\n")).toMatch(/Runtime Doctor/);
   });
 
+  it("prints runtime capability information", async () => {
+    saveWorkspaceConfig({
+      runtimes: {
+        codex: { command: "true", extraArgs: [] },
+      },
+    });
+    clearDefaultsCache();
+    const buf: string[] = [];
+    await captureConsole(buf, () => runDoctor({ runtimes: "codex" }));
+    const text = buf.join("\n");
+    expect(text).toContain("capabilities:");
+    expect(text).toContain("approvals");
+    expect(text).toContain("cwd");
+  });
+
   it("marks a missing binary with MISS", async () => {
     saveWorkspaceConfig({
       runtimes: { codex: { command: "loom-fake-binary-xyz-12345" } },
