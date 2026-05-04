@@ -4,6 +4,7 @@ import { AgentConfig, LoomPhase, PhaseHandoff } from "../types";
 import { getPackageRoot } from "../workspace";
 import { loadDefaults } from "../config";
 import { skillContext } from "./skills";
+import { renderRelevantMemory } from "../memory/store";
 
 const COMMON_PROMPT_RELATIVE = path.join("harness", "prompts", "_common.md");
 
@@ -155,10 +156,12 @@ export function withRolePrompt(
     defaults.outputContract[contractKey] || defaults.outputContract.default || "";
   const contract = readRelativeFile(contractPath);
   const skills = skillContext(agentName || "agent", agent, prompt);
+  const memory = options.handoff ? renderRelevantMemory() : "";
   const sections: string[] = [];
   if (common) sections.push(common);
   if (rolePrompt) sections.push(rolePrompt);
   if (skills) sections.push(skills);
+  if (memory) sections.push(memory);
   if (options.handoff) sections.push(renderPhaseContext(options.handoff));
   if (contract) sections.push(contract);
   sections.push(`Task:\n${prompt}`);

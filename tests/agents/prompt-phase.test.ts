@@ -143,6 +143,52 @@ describe("withRolePrompt + phase context placeholders", () => {
     }, "ornn");
     expect(result).not.toContain("Phase Context");
   });
+
+  it("injects user and project memory when handoff is provided", () => {
+    fs.writeFileSync(commonPath, "BASE");
+    fs.mkdirSync(path.join(tmp, ".loom", "memory"), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, ".loom", "memory", "user.md"),
+      [
+        "# User Memory",
+        "",
+        "<!-- loom-memory",
+        "source: manual",
+        "confidence: high",
+        "updatedAt: 2026-05-04T00:00:00.000Z",
+        "tags: language",
+        "-->",
+        "- Always respond in Korean.",
+      ].join("\n"),
+    );
+    fs.writeFileSync(
+      path.join(tmp, ".loom", "memory", "project.md"),
+      [
+        "# Project Memory",
+        "",
+        "<!-- loom-memory",
+        "source: reflect:p0",
+        "confidence: medium",
+        "updatedAt: 2026-05-04T00:00:00.000Z",
+        "tags: tests",
+        "-->",
+        "- Run npm run check before commits.",
+      ].join("\n"),
+    );
+
+    const result = withRolePrompt(
+      "task",
+      { description: "x", runtime: "codex", model: "x" },
+      "ornn",
+      { handoff: makeHandoff() },
+    );
+
+    expect(result).toContain("Relevant Memory");
+    expect(result).toContain("User Memory");
+    expect(result).toContain("Always respond in Korean.");
+    expect(result).toContain("Project Memory");
+    expect(result).toContain("Run npm run check before commits.");
+  });
 });
 
 describe("revise-hint injection (C-2)", () => {

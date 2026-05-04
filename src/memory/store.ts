@@ -110,3 +110,29 @@ export function loadMemoryFile(kind: Exclude<MemoryKind, "procedure">): MemoryEn
 
   return entries;
 }
+
+export function loadCoreMemory(): MemoryEntry[] {
+  return [...loadMemoryFile("user"), ...loadMemoryFile("project")];
+}
+
+export function renderRelevantMemory(maxChars = 2000): string {
+  const entries = loadCoreMemory();
+  if (entries.length === 0) return "";
+
+  const lines: string[] = ["## Relevant Memory", ""];
+  for (const entry of entries) {
+    lines.push(
+      `### ${entry.kind === "user" ? "User Memory" : "Project Memory"}`,
+    );
+    lines.push(
+      `source: ${entry.source}; confidence: ${entry.confidence}; updatedAt: ${entry.updatedAt || "unknown"}; tags: ${entry.tags.join(", ") || "none"}`,
+    );
+    lines.push("");
+    lines.push(entry.body);
+    lines.push("");
+  }
+
+  const rendered = lines.join("\n").trim();
+  if (rendered.length <= maxChars) return rendered;
+  return rendered.slice(0, maxChars).trimEnd() + "\n...(truncated)";
+}
