@@ -67,6 +67,29 @@ function defaultInteractiveGate(driver: FrameDriver): GateProvider {
   });
 }
 
+function autoProceedGate(): GateProvider {
+  return async () => ({ decision: "proceed" });
+}
+
+function resolveGateProvider(
+  flags: Flags,
+  opts: RunAutopilotOptions,
+  driver: FrameDriver,
+): GateProvider {
+  if (opts.gateProvider) return opts.gateProvider;
+
+  const nonInteractive =
+    flagBool(flags["non-interactive"]) || flagBool(flags["no-interactive"]);
+  const gatePolicy = flagString(flags.gate);
+  if (gatePolicy === "auto-proceed") return autoProceedGate();
+  if (nonInteractive) {
+    throw new Error(
+      "--non-interactive requires an explicit gate policy, e.g. --gate auto-proceed",
+    );
+  }
+  return defaultInteractiveGate(driver);
+}
+
 function recordGate(
   sessionDir: string,
   phase: LoomPhase,
@@ -152,7 +175,7 @@ export async function runAutopilot(
     );
   }
 
-  const gate = opts.gateProvider ?? defaultInteractiveGate(driver);
+  const gate = resolveGateProvider(flags, opts, driver);
   const phasesRun: LoomPhase[] = [];
   let endReason: "abort" | "end-flag" | "completed" = "completed";
 

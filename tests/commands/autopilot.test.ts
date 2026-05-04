@@ -102,6 +102,33 @@ describe("runAutopilot — start phase decision", () => {
 });
 
 describe("runAutopilot — gate flow", () => {
+  it("--non-interactive --gate auto-proceed advances without a gate provider", async () => {
+    let result;
+    await captureConsole([], async () => {
+      result = await runAutopilot(
+        ["PRD for thing"],
+        {
+          feature: "auto-proceed",
+          synthesize: false,
+          "non-interactive": true,
+          gate: "auto-proceed",
+          end: "plan",
+        },
+      );
+    });
+    expect(result?.phasesRun).toEqual(["discuss", "plan"]);
+  });
+
+  it("--non-interactive requires an explicit gate policy", async () => {
+    await expect(
+      runAutopilot(["PRD for thing"], {
+        feature: "non-interactive-no-policy",
+        synthesize: false,
+        "non-interactive": true,
+      }),
+    ).rejects.toThrow(/gate policy/i);
+  });
+
   it("'proceed' gate advances to the next phase in sequence", async () => {
     let result;
     await captureConsole([], async () => {

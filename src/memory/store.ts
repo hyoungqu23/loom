@@ -1,0 +1,112 @@
+import * as fs from "fs";
+import * as path from "path";
+import { ensureWorkspaceState } from "../workspace";
+
+export type MemoryKind = "user" | "project" | "procedure";
+export type MemoryConfidence = "low" | "medium" | "high";
+
+export type MemoryEntry = {
+  kind: MemoryKind;
+  source: string;
+  confidence: MemoryConfidence;
+  updatedAt: string;
+  tags: string[];
+  body: string;
+};
+
+const MEMORY_COMMENT_START = "<!-- loom-memory";
+const MEMORY_COMMENT_END = "-->";
+
+export function memoryRoot(): string {
+  return path.join(ensureWorkspaceState(), "memory");
+}
+
+function memoryHeader(title: string): string {
+  return [
+    `# ${title}`,
+    "",
+    "Loom stores promoted long-term memory here.",
+    "",
+    "Each entry should include source, confidence, updatedAt, and tags metadata.",
+    "",
+  ].join("\n");
+}
+
+export function ensureMemoryStore(): string {
+  const root = memoryRoot();
+  fs.mkdirSync(root, { recursive: true });
+  fs.mkdirSync(path.join(root, "procedures"), { recursive: true });
+  fs.mkdirSync(path.join(root, "candidates"), { recursive: true });
+  fs.mkdirSync(path.join(root, "archive"), { recursive: true });
+
+  const files: Array<[string, string]> = [
+    ["user.md", "User Memory"],
+    ["project.md", "Project Memory"],
+  ];
+  for (const [file, title] of files) {
+    const filePath = path.join(root, file);
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, memoryHeader(title), "utf8");
+    }
+  }
+  return root;
+}
+
+function memoryFilePath(kind: MemoryKind): string {
+  if (kind === "procedure") return path.join(memoryRoot(), "procedures");
+  return path.join(memoryRoot(), `${kind}.md`);
+}
+
+function parseMetadata(raw: string): Omit<MemoryEntry, "kind" | "body"> {
+  const meta: Record<string, string> = {};
+  for (const line of raw.split(/\r?\n/)) {
+    const idx = line.indexOf(":");
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    const value = line.slice(idx + 1).trim();
+    if (key) meta[key] = value;
+  }
+
+  const confidence = meta.confidence as MemoryConfidence;
+  return {
+    source: meta.source || "unknown",
+    confidence:
+      confidence === "low" || confidence === "high" ? confidence : "medium",
+    updatedAt: meta.updatedAt || "",
+    tags: (meta.tags || "")
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean),
+  };
+}
+
+export function loadMemoryFile(kind: Exclude<MemoryKind, "procedure">): MemoryEntry[] {
+  const filePath = memoryFilePath(kind);
+  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) return [];
+
+  const content = fs.readFileSync(filePath, "utf8");
+  const entries: MemoryEntry[] = [];
+  let cursor = 0;
+
+  while (cursor < content.length) {
+    const start = content.indexOf(MEMORY_COMMENT_START, cursor);
+    if (start === -1) break;
+    const metaStart = start + MEMORY_COMMENT_START.length;
+    const metaEnd = content.indexOf(MEMORY_COMMENT_END, metaStart);
+    if (metaEnd === -1) break;
+
+    const nextStart = content.indexOf(MEMORY_COMMENT_START, metaEnd);
+    const bodyStart = metaEnd + MEMORY_COMMENT_END.length;
+    const bodyEnd = nextStart === -1 ? content.length : nextStart;
+    const body = content.slice(bodyStart, bodyEnd).trim();
+
+    entries.push({
+      kind,
+      ...parseMetadata(content.slice(metaStart, metaEnd)),
+      body,
+    });
+    cursor = bodyEnd;
+  }
+
+  return entries;
+}

@@ -13,6 +13,7 @@ Usage:
                                [--personas <a,b>] [--synthesize false] [--dry-run]
   loom autopilot "<task>" --feature <slug> [--start <phase>] [--end <phase>]
                           [--synthesize false] [--dry-run]
+                          [--non-interactive --gate auto-proceed]
 
 Workflow:
   discuss → plan → build → review → verify → ship → reflect
@@ -29,5 +30,6 @@ Examples:
   loom phase plan    "API 설계"      --feature billing-v2
   loom phase review  --feature billing-v2 --gate proceed --note "보안 검토 통과"
   loom autopilot "Hotfix" --feature latest --start build --end review
+  loom autopilot "Nightly QA" --feature nightly-qa --non-interactive --gate auto-proceed
 `);
 }

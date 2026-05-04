@@ -45,6 +45,14 @@ describe("parseArgs", () => {
     expect(parsed.flags).toEqual({ smoke: true, model: "opus" });
   });
 
+  it("treats --non-interactive as a boolean flag", () => {
+    const parsed = parseArgs(["autopilot", "--non-interactive", "--gate", "auto-proceed"]);
+    expect(parsed.flags).toEqual({
+      "non-interactive": true,
+      gate: "auto-proceed",
+    });
+  });
+
   it("treats non-whitelisted --flag without value as boolean true at end of argv", () => {
     expect(parseArgs(["--verbose"]).flags).toEqual({ verbose: true });
   });
