@@ -9,7 +9,7 @@ import {
   getActiveWorkspace,
   setActiveWorkspace,
 } from "../../src/workspace";
-import { TeamHooks } from "../../src/types";
+import { AgentRun, TeamHooks } from "../../src/types";
 
 let tmp: string;
 let originalWorkspace: string;
@@ -50,6 +50,43 @@ describe("runWorkerAsync", () => {
     expect(fs.existsSync(path.join(out, "stdout.md"))).toBe(true);
     expect(fs.existsSync(path.join(out, "stderr.log"))).toBe(true);
     expect(fs.existsSync(path.join(out, "result.json"))).toBe(true);
+  });
+
+  it("records command risk in request.json", async () => {
+    const worker = resolveAgentRun("twistedfate", "task body", { cwd: tmp });
+    const out = path.join(tmp, "wout");
+    await runWorkerAsync(worker, out);
+
+    const request = JSON.parse(
+      fs.readFileSync(path.join(out, "request.json"), "utf8"),
+    );
+    expect(request.commandRisk.level).toBe("safe");
+    expect(request.commandRisk.categories).toEqual([]);
+  });
+
+  it("blocks high-risk commands unless explicitly approved", async () => {
+    fs.writeFileSync(path.join(tmp, ".env"), "SECRET_TOKEN=abc\n", "utf8");
+    const worker: AgentRun = {
+      agentName: "manual",
+      agent: { description: "x", runtime: "manual", model: "x" },
+      prompt: "x",
+      options: { cwd: tmp },
+      spec: {
+        command: "cat",
+        args: [".env"],
+        cwd: tmp,
+      },
+    };
+    const out = path.join(tmp, "blocked");
+    const result = await runWorkerAsync(worker, out);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("blocked by approval policy");
+    expect(result.stderr).toContain("secret-access");
+    expect(fs.readFileSync(path.join(out, "stdout.md"), "utf8")).toBe("");
+    const saved = JSON.parse(fs.readFileSync(path.join(out, "result.json"), "utf8"));
+    expect(saved.denied).toBe(true);
   });
 
   it("returns a WorkerResult merging the agent run plan + stream output", async () => {

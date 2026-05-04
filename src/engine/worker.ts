@@ -14,6 +14,7 @@ import { writeJson } from "../util/json";
 import { flagNumber, flagString } from "../util/parse-args";
 import { DEFAULT_RUNTIME_TIMEOUT_MS } from "./constants";
 import { runSpec } from "./spawn";
+import { classifyCommandRisk } from "./risk";
 
 /**
  * Resolve a run plan for one agent (prompt + spawn spec).
@@ -51,6 +52,10 @@ export async function runWorkerAsync(
   hooks: TeamHooks = {},
 ): Promise<WorkerResult> {
   fs.mkdirSync(outputDir, { recursive: true });
+  const commandRisk = classifyCommandRisk({
+    command: worker.spec.command,
+    args: worker.spec.args,
+  });
   writeJson(path.join(outputDir, "request.json"), {
     agent: worker.agentName,
     runtime: worker.agent.runtime,
@@ -58,10 +63,35 @@ export async function runWorkerAsync(
     effort: worker.options.effort || null,
     command: worker.spec.command,
     args: worker.spec.args,
+    commandRisk,
     stdinPreview: worker.spec.stdin ? worker.spec.stdin.slice(0, 1200) : null,
     cwd: worker.spec.cwd,
     startedAt: new Date().toISOString(),
   });
+
+  const approved = worker.options.approvalMode === "allow-risky";
+  if (commandRisk.level === "high" && !approved) {
+    const stderr = `[loom] blocked by approval policy: ${commandRisk.reason}\n`;
+    fs.writeFileSync(path.join(outputDir, "stdout.md"), "");
+    fs.writeFileSync(path.join(outputDir, "stderr.log"), stderr);
+    writeJson(path.join(outputDir, "result.json"), {
+      status: 1,
+      signal: null,
+      denied: true,
+      commandRisk,
+      finishedAt: new Date().toISOString(),
+    });
+    const result: WorkerResult = {
+      ...worker,
+      outputDir,
+      stdout: "",
+      stderr,
+      status: 1,
+      signal: null,
+    };
+    if (hooks.onWorkerDone) hooks.onWorkerDone(result);
+    return result;
+  }
 
   if (hooks.onWorkerStart) hooks.onWorkerStart(worker, outputDir);
 
@@ -77,6 +107,8 @@ export async function runWorkerAsync(
   writeJson(path.join(outputDir, "result.json"), {
     status: runResult.status,
     signal: runResult.signal,
+    denied: false,
+    commandRisk,
     finishedAt: new Date().toISOString(),
   });
 
