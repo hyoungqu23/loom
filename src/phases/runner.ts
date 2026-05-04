@@ -1,0 +1,261 @@
+import * as fs from "fs";
+import * as path from "path";
+import {
+  AgentRun,
+  Flags,
+  LoomPhase,
+  LOOM_PHASES,
+  PhaseHandoff,
+  PhaseState,
+  TeamHooks,
+  WorkerResult,
+} from "../types";
+import { resolveAgentRun, runWorkerAsync } from "../engine/worker";
+import { flagBool, flagString } from "../util/parse-args";
+import {
+  appendWorkerOutput,
+  buildHandoff,
+  loadContext,
+  loadPlan,
+  loadState,
+  writeContext,
+  writePlan,
+  writeState,
+} from "./session";
+import { loadPhaseMatrix, personasForPhase } from "./matrix";
+import {
+  extractContextFromOutput,
+  extractPlanFromOutput,
+  isContextDeltaEmpty,
+  isPlanDeltaEmpty,
+  mergeContext,
+  mergePlan,
+} from "./extract";
+
+export type PhaseRunOptions = {
+  task: string;
+  flags: Flags;
+  hooks?: TeamHooks;
+  /** Override personas; defaults to matrix.primary for the phase. */
+  personas?: string[];
+  /** Run synthesizer (twistedfate) over phase outputs. */
+  synthesize?: boolean;
+};
+
+export type PhaseRunResult = {
+  sessionDir: string;
+  phase: LoomPhase;
+  workers: WorkerResult[];
+  synthesisPath: string | null;
+  stateAfter: PhaseState;
+};
+
+const PHASE_SET = new Set<string>(LOOM_PHASES);
+
+function ensurePhase(value: string): LoomPhase {
+  if (!PHASE_SET.has(value)) {
+    throw new Error(`runPhase: unknown phase ${value}`);
+  }
+  return value as LoomPhase;
+}
+
+function selectPersonas(phase: LoomPhase, override?: string[]): string[] {
+  if (override && override.length > 0) return override;
+  const matrix = loadPhaseMatrix();
+  const rule = matrix.find((r) => r.phase === phase);
+  // For phase runs we default to primary personas only — secondary
+  // personas are advisory and can be invoked via `--personas` if
+  // the user wants them.
+  if (rule && rule.primary.length > 0) return rule.primary;
+  // Fall back to all matrix entries for the phase (primary+secondary)
+  // so a misconfigured matrix still yields someone to run.
+  const fallback = personasForPhase(matrix, phase);
+  if (fallback.length > 0) return fallback;
+  throw new Error(`runPhase: no personas configured for phase ${phase}`);
+}
+
+function summarizeWorkersForSynthesis(
+  workers: WorkerResult[],
+  phase: LoomPhase,
+): string {
+  return workers
+    .map((w) =>
+      [
+        `## ${w.agentName} (${phase} | ${w.agent.runtime}:${w.options.model})`,
+        `status: ${w.status}`,
+        "",
+        "### structured_output",
+        w.stdout.trim() || "(empty)",
+        "",
+        "### stderr_summary",
+        w.stderr.trim() ? w.stderr.trim().slice(0, 1200) : "(empty)",
+      ].join("\n"),
+    )
+    .join("\n\n---\n\n");
+}
+
+function autoExtractContext(
+  sessionDir: string,
+  workers: WorkerResult[],
+): void {
+  let ctx = loadContext(sessionDir);
+  let touched = false;
+  for (const w of workers) {
+    const delta = extractContextFromOutput(w.stdout || "");
+    if (isContextDeltaEmpty(delta)) continue;
+    ctx = mergeContext(ctx, delta);
+    touched = true;
+  }
+  if (touched && ctx) {
+    writeContext(sessionDir, ctx);
+    console.log(`[loom] CONTEXT.md updated from ${workers.length} worker(s)`);
+  }
+}
+
+function autoExtractPlan(
+  sessionDir: string,
+  workers: WorkerResult[],
+): void {
+  let plan = loadPlan(sessionDir);
+  let touched = false;
+  for (const w of workers) {
+    const delta = extractPlanFromOutput(w.stdout || "");
+    if (isPlanDeltaEmpty(delta)) continue;
+    plan = mergePlan(plan, delta);
+    touched = true;
+  }
+  if (touched && plan) {
+    writePlan(sessionDir, plan);
+    console.log(`[loom] PLAN.md updated from ${workers.length} worker(s)`);
+  }
+}
+
+function advanceState(
+  sessionDir: string,
+  phase: LoomPhase,
+): PhaseState {
+  const state = loadState(sessionDir);
+  if (state.currentPhase !== phase) {
+    state.currentPhase = phase;
+  }
+  if (state.history[state.history.length - 1] !== phase) {
+    state.history.push(phase);
+  }
+  writeState(sessionDir, state);
+  return state;
+}
+
+export async function runPhase(
+  sessionDir: string,
+  rawPhase: LoomPhase,
+  options: PhaseRunOptions,
+): Promise<PhaseRunResult> {
+  const phase = ensurePhase(rawPhase);
+  const personas = selectPersonas(phase, options.personas);
+  const dryRun = flagBool(options.flags["dry-run"]);
+  const shouldSynthesize = options.synthesize ?? !dryRun;
+
+  if (dryRun) {
+    const handoff = buildHandoff(sessionDir, phase);
+    for (const persona of personas) {
+      const run: AgentRun = resolveAgentRun(
+        persona,
+        options.task,
+        options.flags,
+        { phase, handoff },
+      );
+      const stdinHint = run.spec.stdin ? " <prompt via stdin>" : "";
+      console.log(
+        `${persona}: ${run.spec.command} ${run.spec.args.join(" ")}${stdinHint}`,
+      );
+    }
+    return {
+      sessionDir,
+      phase,
+      workers: [],
+      synthesisPath: null,
+      stateAfter: loadState(sessionDir),
+    };
+  }
+
+  // Build handoff BEFORE advancing state so the running phase can
+  // see prior outputs as "previous" rather than "current".
+  const handoff: PhaseHandoff = buildHandoff(sessionDir, phase);
+
+  console.log(`[loom] phase: ${phase}  personas: ${personas.join(", ")}`);
+
+  const runs: AgentRun[] = personas.map((persona) =>
+    resolveAgentRun(persona, options.task, options.flags, { phase, handoff }),
+  );
+
+  const workers = await Promise.all(
+    runs.map((run) => {
+      const outputDir = path.join(
+        sessionDir,
+        "workers",
+        phase,
+        `${run.agentName}.run`,
+      );
+      return runWorkerAsync(run, outputDir, options.hooks ?? {});
+    }),
+  );
+
+  for (const result of workers) {
+    appendWorkerOutput(
+      sessionDir,
+      phase,
+      result.agentName,
+      result.stdout || "(no output)",
+    );
+    const signalSuffix = result.signal ? ` signal=${result.signal}` : "";
+    console.log(
+      `[loom] done  ${result.agentName} status=${result.status}${signalSuffix}`,
+    );
+  }
+
+  // Auto-extract structured artefacts from worker output. The discuss
+  // phase produces CONTEXT.md; the plan phase produces PLAN.md. We merge
+  // (never overwrite) so user-edited fields survive across runs.
+  if (phase === "discuss") {
+    autoExtractContext(sessionDir, workers);
+  } else if (phase === "plan") {
+    autoExtractPlan(sessionDir, workers);
+  }
+
+  const stateAfter = advanceState(sessionDir, phase);
+
+  let synthesisPath: string | null = null;
+  if (shouldSynthesize && workers.length > 0) {
+    const synthName = flagString(options.flags.synthesizer, "twistedfate");
+    const synthTask = [
+      `Synthesize the ${phase} phase outputs for the user.`,
+      "Lead with the recommendation, list disagreements, then next-action checklist.",
+      "",
+      "# Original Task",
+      options.task,
+      "",
+      "# Phase Outputs",
+      summarizeWorkersForSynthesis(workers, phase),
+    ].join("\n");
+    const synthRun = resolveAgentRun(
+      synthName,
+      synthTask,
+      { ...options.flags, model: undefined },
+      { phase, handoff },
+    );
+    const synthDir = path.join(sessionDir, "workers", phase, "synthesis.run");
+    const synth = await runWorkerAsync(synthRun, synthDir, options.hooks ?? {});
+    synthesisPath = path.join(sessionDir, "workers", phase, "synthesis.md");
+    fs.writeFileSync(synthesisPath, synth.stdout || "");
+    const signalSuffix = synth.signal ? ` signal=${synth.signal}` : "";
+    console.log(`[loom] synthesis status=${synth.status}${signalSuffix}`);
+  }
+
+  return {
+    sessionDir,
+    phase,
+    workers,
+    synthesisPath,
+    stateAfter,
+  };
+}
