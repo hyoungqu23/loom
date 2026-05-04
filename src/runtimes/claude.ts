@@ -4,6 +4,7 @@ import { RuntimeSpec } from "../types";
 export const claudeAdapter: RuntimeAdapter = {
   name: "claude",
   versionArgs: ["--version"],
+  envAllowlist: ["ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL", "CLAUDE_*"],
   buildSpec({ prompt, cwd, model, config, options }: BuildSpecArgs): RuntimeSpec {
     const args: string[] = [
       "-p",

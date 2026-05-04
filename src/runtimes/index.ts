@@ -8,6 +8,7 @@ import { codexAdapter } from "./codex";
 import { claudeAdapter } from "./claude";
 import { geminiAdapter } from "./gemini";
 import { ollamaAdapter } from "./ollama";
+import { filterEnv } from "./env";
 
 const ADAPTERS: { [key: string]: RuntimeAdapter } = {
   codex: codexAdapter,
@@ -41,7 +42,13 @@ export function buildRuntimeCommand(
   const cwd = path.resolve(options.cwd || workspaceRoot());
   const model = options.model || config.model;
   const adapter = getRuntimeAdapter(runtime);
-  return adapter.buildSpec({ prompt, cwd, model, config, options });
+  const spec = adapter.buildSpec({ prompt, cwd, model, config, options });
+  if (spec.env) return spec;
+  const env =
+    options.envPassthrough === "full"
+      ? process.env
+      : filterEnv(process.env, adapter.envAllowlist ?? []);
+  return { ...spec, env };
 }
 
 export function runtimeVersion(

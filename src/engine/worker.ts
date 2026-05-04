@@ -33,6 +33,15 @@ export function resolveAgentRun(
   const agent = loadAgent(agentName);
   const prompt = withRolePrompt(task, agent, agentName, promptOptions);
   const relevantSkills = selectedSkillNames(agentName, agent, task);
+  const envPassthroughRaw = flagString(flags["env-passthrough"]);
+  let envPassthrough: "allowlist" | "full" | undefined;
+  if (envPassthroughRaw === "full" || envPassthroughRaw === "allowlist") {
+    envPassthrough = envPassthroughRaw;
+  } else if (envPassthroughRaw) {
+    throw new Error(
+      `--env-passthrough must be one of: allowlist, full (got: ${envPassthroughRaw})`,
+    );
+  }
   const options: RunOptions = {
     cwd: flagString(flags.cwd) || undefined,
     model: flagString(flags.model) || agent.model,
@@ -43,6 +52,7 @@ export function resolveAgentRun(
     approvalMode: flagString(flags["approval-mode"]) || undefined,
     outputFormat: flagString(flags["output-format"]) || undefined,
     timeoutMs: flagNumber(flags.timeout, 0) || flagNumber(flags.timeoutMs, 0) || undefined,
+    envPassthrough,
   };
   const spec = buildRuntimeCommand(agent.runtime, prompt, options);
   return { agentName, agent, prompt, relevantSkills, options, spec };
@@ -58,6 +68,13 @@ export async function runWorkerAsync(
     command: worker.spec.command,
     args: worker.spec.args,
   });
+  const envPolicy = worker.options.envPassthrough ?? "allowlist";
+  const filteredEnvCount = worker.spec.env
+    ? Math.max(
+        Object.keys(process.env).length - Object.keys(worker.spec.env).length,
+        0,
+      )
+    : 0;
   writeJson(path.join(outputDir, "request.json"), {
     agent: worker.agentName,
     runtime: worker.agent.runtime,
@@ -67,6 +84,8 @@ export async function runWorkerAsync(
     args: worker.spec.args,
     commandRisk,
     approvalScope: "runtime-command-only",
+    envPolicy,
+    filteredEnvCount,
     relevantSkills: worker.relevantSkills || [],
     stdinPreview: worker.spec.stdin ? worker.spec.stdin.slice(0, 1200) : null,
     cwd: worker.spec.cwd,

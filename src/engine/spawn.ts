@@ -22,7 +22,7 @@ export function runSpec(
   return new Promise<RuntimeResult>((resolve) => {
     const child = spawn(spec.command, spec.args, {
       cwd: spec.cwd,
-      env: process.env,
+      env: spec.env ?? process.env,
       stdio: ["pipe", "pipe", "pipe"],
     });
 

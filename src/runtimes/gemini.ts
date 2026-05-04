@@ -4,6 +4,7 @@ import { RuntimeSpec } from "../types";
 export const geminiAdapter: RuntimeAdapter = {
   name: "gemini",
   versionArgs: ["--version"],
+  envAllowlist: ["GOOGLE_API_KEY", "GEMINI_API_KEY", "GEMINI_*"],
   buildSpec({ prompt, cwd, model, config, options }: BuildSpecArgs): RuntimeSpec {
     // Gemini CLI requires `-p` to be present to enable non-interactive
     // mode; an empty `-p ""` value flips it into stdin-pipe mode so the

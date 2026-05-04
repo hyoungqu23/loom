@@ -59,6 +59,13 @@ export type RuntimeSpec = {
   args: string[];
   cwd: string;
   stdin?: string;
+  /**
+   * When set, the child process will receive only these env vars (plus
+   * the host PATH so the binary itself resolves). When omitted, the
+   * spawn falls back to `process.env` for backwards compatibility with
+   * direct callers (e.g. cron jobs).
+   */
+  env?: NodeJS.ProcessEnv;
 };
 
 export type RunOptions = {
@@ -71,6 +78,12 @@ export type RunOptions = {
   approvalMode?: string;
   outputFormat?: string;
   timeoutMs?: number;
+  /**
+   * `"allowlist"` (default) restricts child env to runtime-specific keys
+   * plus a shared system list. `"full"` passes the entire host env
+   * through — useful for debugging missing-key issues.
+   */
+  envPassthrough?: "allowlist" | "full";
 };
 
 export type AgentRun = {
