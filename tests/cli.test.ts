@@ -150,6 +150,7 @@ describe("runCliCommand", () => {
       cwd: tmp,
       feature: "fast",
       enabled: true,
+      approvalMode: "allow-risky",
     });
     addCronJob({
       id: "slow",
@@ -159,6 +160,7 @@ describe("runCliCommand", () => {
       cwd: tmp,
       feature: "slow",
       enabled: true,
+      approvalMode: "allow-risky",
     });
 
     const first = runCliCommand(["cron", "run", "fast"]);
