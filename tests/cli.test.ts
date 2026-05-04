@@ -66,6 +66,12 @@ describe("main", () => {
     expect(buf.join("\n")).toMatch(/Memory Candidates/);
   });
 
+  it("dispatches to metrics command", async () => {
+    const buf: string[] = [];
+    await captureConsole(buf, () => main(["metrics", "summary"]));
+    expect(buf.join("\n")).toMatch(/Metrics Summary/);
+  });
+
   it("dispatches `config show` to the config command", async () => {
     const buf: string[] = [];
     await captureConsole(buf, () => main(["config", "show"]));

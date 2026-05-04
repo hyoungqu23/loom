@@ -10,6 +10,7 @@ import { runAutopilot } from "./commands/autopilot";
 import { printAgents, printInstalledSkills } from "./commands/listings";
 import { printHelp } from "./commands/help";
 import { runMemoryCommand } from "./commands/memory";
+import { runMetricsCommand } from "./commands/metrics";
 import { runRuntime } from "./engine";
 import { buildRuntimeCommand } from "./runtimes";
 
@@ -39,6 +40,9 @@ const HANDLERS: { [key: string]: Handler } = {
   },
   memory: (positionals, flags) => {
     runMemoryCommand(positionals.slice(1), flags);
+  },
+  metrics: (positionals, flags) => {
+    runMetricsCommand(positionals.slice(1), flags);
   },
 };
 

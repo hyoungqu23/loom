@@ -13,6 +13,7 @@ import { clearDefaultsCache, saveWorkspaceConfig } from "../../src/config";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
+  loomStateRoot,
   setActiveWorkspace,
 } from "../../src/workspace";
 
@@ -306,5 +307,40 @@ GraphQL 게이트웨이 도입.
     expect(skill).toContain("## Verification");
     expect(skill).toContain("## Failure Recovery");
     expect(skill).toContain("npm run check");
+  });
+
+  it("records phase metrics after a phase run", async () => {
+    stubBin = writeStub("ok");
+    saveWorkspaceConfig({
+      runtimes: {
+        codex: { command: stubBin, extraArgs: [] },
+        claude: { command: stubBin, extraArgs: [] },
+        gemini: { command: stubBin, extraArgs: [] },
+        ollama: { command: stubBin, extraArgs: [] },
+      },
+    });
+    clearDefaultsCache();
+
+    const dir = createPhaseSession("metrics-feature");
+    await captureConsole([], async () => {
+      await runPhase(dir, "plan", {
+        task: "x",
+        flags: {},
+        synthesize: false,
+      });
+    });
+
+    const jsonl = fs.readFileSync(
+      path.join(loomStateRoot(), "metrics", "events.jsonl"),
+      "utf8",
+    );
+    const event = JSON.parse(jsonl.trim());
+    expect(event).toMatchObject({
+      type: "phase",
+      feature: "metrics-feature",
+      phase: "plan",
+    });
+    expect(event.workerCount).toBeGreaterThanOrEqual(1);
+    expect(event.durationMs).toBeGreaterThanOrEqual(0);
   });
 });

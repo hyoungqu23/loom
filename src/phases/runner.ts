@@ -35,6 +35,7 @@ import {
 } from "./extract";
 import { writeMemoryCandidates } from "../memory/store";
 import { writeSkillCandidate } from "../agents/skills";
+import { appendMetricEvent } from "../metrics/events";
 
 export type PhaseRunOptions = {
   task: string;
@@ -348,6 +349,14 @@ export async function runPhase(
       outBytes: totalOutBytes,
       elapsedMs: Date.now() - phaseStartedAt,
       failed: failedCount,
+    });
+    appendMetricEvent({
+      type: "phase",
+      feature: path.basename(sessionDir),
+      phase,
+      durationMs: Date.now() - phaseStartedAt,
+      workerCount: workers.length,
+      failedCount,
     });
 
     return {
