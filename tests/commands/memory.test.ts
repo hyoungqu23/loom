@@ -10,6 +10,7 @@ import {
   setActiveWorkspace,
 } from "../../src/workspace";
 import { memoryRoot } from "../../src/memory/store";
+import { createPhaseSession, writeContext } from "../../src/phases/session";
 
 let tmp: string;
 let originalWorkspace: string;
@@ -84,5 +85,25 @@ describe("runMemoryCommand", () => {
     expect(fs.existsSync(path.join(memoryRoot(), "archive", "cand-3.md"))).toBe(
       true,
     );
+  });
+
+  it("searches prior feature sessions", async () => {
+    const dir = createPhaseSession("auth cleanup");
+    writeContext(dir, {
+      problem: "Magic link login is failing for invited users.",
+      user: "operators",
+      glossary: [],
+      decisions: ["Improve invitation auth copy"],
+      nonGoals: [],
+      openQuestions: [],
+    });
+
+    const buf: string[] = [];
+    await captureConsole(buf, () => runMemoryCommand(["search", "magic link"], {}));
+
+    const text = buf.join("\n");
+    expect(text).toContain("Session Search");
+    expect(text).toContain("auth-cleanup");
+    expect(text).toContain("Magic link login");
   });
 });

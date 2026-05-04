@@ -6,6 +6,7 @@ import {
   promoteMemoryCandidate,
   rejectMemoryCandidate,
 } from "../memory/store";
+import { searchFeatureSessions } from "../memory/search";
 
 function ensureMemoryKind(value: string): MemoryKind {
   if (value === "user" || value === "project" || value === "procedure") {
@@ -48,7 +49,24 @@ export function runMemoryCommand(positionals: string[], flags: Flags): void {
     return;
   }
 
+  if (subcommand === "search") {
+    const query = positionals.slice(1).join(" ").trim();
+    if (!query) throw new Error('Usage: loom memory search "<query>"');
+    const results = searchFeatureSessions(query);
+    console.log("Session Search\n");
+    if (results.length === 0) {
+      console.log("(no matches)");
+      return;
+    }
+    for (const r of results) {
+      console.log(`${r.feature}  score=${r.score}`);
+      console.log(`  path: ${r.path}`);
+      console.log(`  ${r.summary}`);
+    }
+    return;
+  }
+
   throw new Error(
-    "Usage: loom memory list | promote <id> --type user|project|procedure | reject <id>",
+    'Usage: loom memory list | search "<query>" | promote <id> --type user|project|procedure | reject <id>',
   );
 }
