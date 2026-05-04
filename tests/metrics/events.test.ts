@@ -84,4 +84,29 @@ describe("metrics events", () => {
       },
     ]);
   });
+
+  it("skips malformed JSONL lines while loading metrics", () => {
+    appendMetricEvent({
+      type: "phase",
+      feature: "auth",
+      phase: "plan",
+      durationMs: 10,
+      workerCount: 1,
+      failedCount: 0,
+    });
+    fs.appendFileSync(metricsEventsPath(), "{not valid json}\n", "utf8");
+    appendMetricEvent({
+      type: "phase",
+      feature: "billing",
+      phase: "build",
+      durationMs: 20,
+      workerCount: 1,
+      failedCount: 0,
+    });
+
+    expect(loadMetricEvents().map((event) => event.feature)).toEqual([
+      "auth",
+      "billing",
+    ]);
+  });
 });

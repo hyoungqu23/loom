@@ -43,12 +43,20 @@ export function appendMetricEvent(event: MetricEvent): void {
 export function loadMetricEvents(): MetricEvent[] {
   const filePath = metricsEventsPath();
   if (!fs.existsSync(filePath)) return [];
-  return fs
+  const events: MetricEvent[] = [];
+  for (const line of fs
     .readFileSync(filePath, "utf8")
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => JSON.parse(line) as MetricEvent);
+    .filter(Boolean)) {
+    try {
+      events.push(JSON.parse(line) as MetricEvent);
+    } catch {
+      // Metrics are append-only operational data. Preserve access to valid
+      // events even when one line is corrupted by interruption or hand edits.
+    }
+  }
+  return events;
 }
 
 export function summarizeMetrics(): MetricsSummary[] {
