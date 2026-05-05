@@ -8,6 +8,7 @@ import { loadState } from "../phases/session.js";
 import { GateDecision, LoomPhase } from "../types.js";
 import {
   DEFAULT_AUTOPILOT_END_PHASE,
+  inferAutopilotStartPhase,
   isAutopilotEnd,
   nextLoomPhase,
 } from "./autopilot.js";
@@ -161,11 +162,19 @@ async function startAutopilot(
   state: ChatState,
   task: string,
   opts: ChatRuntimeOptions,
+  startPhaseOverride?: LoomPhase,
+  endPhaseOverride?: LoomPhase,
 ): Promise<ChatCommandExecution> {
-  const endPhase = DEFAULT_AUTOPILOT_END_PHASE;
+  // Resolve start phase: explicit /autopilot --start beats inference,
+  // inference (with state-guards) beats currentPhase. Fall back to
+  // currentPhase if inferStartPhase yields a low-confidence default
+  // that doesn't move us forward.
+  const startPhase =
+    startPhaseOverride ?? inferAutopilotStartPhase(state, task);
+  const endPhase = endPhaseOverride ?? DEFAULT_AUTOPILOT_END_PHASE;
   const startMsg: ChatRuntimeMessage = {
     type: "autopilot-start",
-    text: `autopilot started: ${state.currentPhase} → ${endPhase}`,
+    text: `autopilot started: ${startPhase} → ${endPhase}`,
   };
   emitProgress(opts, startMsg);
   const armedState = chatReducer(state, {
@@ -173,7 +182,7 @@ async function startAutopilot(
     task,
     endPhase,
   });
-  const phaseRun = await executeChatPhase(armedState, state.currentPhase, task, opts);
+  const phaseRun = await executeChatPhase(armedState, startPhase, task, opts);
   const waitState = chatReducer(phaseRun.state, {
     type: "gate-wait",
     phase: phaseRun.phaseResult.stateAfter.currentPhase,
@@ -330,7 +339,13 @@ export async function executeChatCommand(
         ],
       };
     }
-    return startAutopilot(state, command.task, opts);
+    return startAutopilot(
+      state,
+      command.task,
+      opts,
+      command.startPhase,
+      command.endPhase,
+    );
   }
 
   if (command.type === "gate") {

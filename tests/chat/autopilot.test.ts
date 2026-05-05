@@ -256,6 +256,43 @@ describe("chat/autopilot loop", () => {
     ]);
   });
 
+  it("honours --start and --end overrides on /autopilot", async () => {
+    let state = buildState("autopilot start end");
+
+    await captureConsole([], async () => {
+      const start = await executeChatCommand(state, {
+        type: "autopilot",
+        task: "tight scope",
+        startPhase: "build",
+        endPhase: "build",
+      });
+      state = start.state;
+    });
+
+    // First phase ran at build (not the inferred default).
+    expect(state.run).toEqual({
+      status: "waiting-for-gate",
+      phase: "build",
+    });
+
+    let proceedResult;
+    await captureConsole([], async () => {
+      proceedResult = await executeChatCommand(state, {
+        type: "gate",
+        decision: "proceed",
+        note: "",
+      });
+    });
+
+    // /gate proceed at the configured end phase stops the loop
+    // immediately instead of advancing into review.
+    expect(proceedResult?.state.autopilot).toBe(null);
+    const stop = proceedResult?.messages.find(
+      (m) => m.type === "autopilot-stop",
+    );
+    expect(stop?.text).toContain("autopilot complete");
+  });
+
   it("stops autopilot once the end phase finishes with proceed", async () => {
     const sessionDir = createPhaseSession("autopilot end");
     let state = createInitialChatState({

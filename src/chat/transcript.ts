@@ -45,8 +45,14 @@ function commandToText(result: Extract<ChatParseResult, { kind: "command" }>): s
   switch (command.type) {
     case "phase":
       return `/phase ${command.phase}${command.task ? ` ${command.task}` : ""}`;
-    case "autopilot":
-      return `/autopilot ${command.task}`.trimEnd();
+    case "autopilot": {
+      const flags: string[] = [];
+      if (command.startPhase) flags.push(`--start ${command.startPhase}`);
+      if (command.endPhase) flags.push(`--end ${command.endPhase}`);
+      const flagPart = flags.length > 0 ? ` ${flags.join(" ")}` : "";
+      const taskPart = command.task ? ` ${command.task}` : "";
+      return `/autopilot${flagPart}${taskPart}`.trimEnd();
+    }
     case "gate": {
       const phasePart = command.phase ? ` ${command.phase}` : "";
       const notePart = command.note ? ` ${command.note}` : "";

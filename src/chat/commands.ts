@@ -11,7 +11,12 @@ const OPEN_TARGET_SET = new Set<string>([
 
 export type ChatCommand =
   | { type: "phase"; phase: LoomPhase; task: string }
-  | { type: "autopilot"; task: string }
+  | {
+      type: "autopilot";
+      task: string;
+      startPhase?: LoomPhase;
+      endPhase?: LoomPhase;
+    }
   | {
       type: "gate";
       decision: GateDecision;
@@ -63,7 +68,36 @@ export function parseChatInput(input: string): ChatParseResult {
   }
 
   if (name === "autopilot") {
-    return { kind: "command", command: { type: "autopilot", task: rest } };
+    // Optional `--start <phase>` / `--end <phase>` flags up front;
+    // everything after them is the task. The flags mirror the CLI
+    // `loom autopilot --start --end` shape so chat callers can scope
+    // a partial run (e.g. "build only" or "stop at review").
+    const tokens = rest.split(/\s+/).filter(Boolean);
+    let cursor = 0;
+    let startPhase: LoomPhase | undefined;
+    let endPhase: LoomPhase | undefined;
+    while (cursor < tokens.length) {
+      const flag = tokens[cursor];
+      if (flag === "--start" || flag === "--end") {
+        const value = tokens[cursor + 1];
+        if (!value || !PHASE_SET.has(value)) {
+          return {
+            kind: "error",
+            message: `${flag} requires a phase (one of: ${LOOM_PHASES.join(", ")})`,
+          };
+        }
+        if (flag === "--start") startPhase = value as LoomPhase;
+        else endPhase = value as LoomPhase;
+        cursor += 2;
+        continue;
+      }
+      break;
+    }
+    const task = tokens.slice(cursor).join(" ");
+    return {
+      kind: "command",
+      command: { type: "autopilot", task, startPhase, endPhase },
+    };
   }
 
   if (name === "gate") {

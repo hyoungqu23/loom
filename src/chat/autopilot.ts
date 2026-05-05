@@ -1,4 +1,7 @@
 import { LoomPhase, LOOM_PHASES } from "../types.js";
+import { inferStartPhase } from "../phases/start-phase.js";
+import { buildHandoff } from "../phases/session.js";
+import type { ChatState } from "./state.js";
 
 /**
  * Default last phase the chat autopilot loop runs before stopping after a
@@ -30,4 +33,34 @@ export function isAutopilotEnd(
 ): boolean {
   if (finishedPhase === endPhase) return true;
   return nextLoomPhase(finishedPhase) === null;
+}
+
+/**
+ * Resolve the start phase for `/autopilot <task>` when the user did
+ * not pass an explicit `--start <phase>`. We delegate to the same
+ * inferStartPhase routing the CLI uses (harness/start-phase.md
+ * regexes + state guards from CONTEXT.md / PLAN.md presence). The
+ * inferred phase is preferred when it actually advances past the
+ * snapshot's currentPhase; otherwise we keep currentPhase so a user
+ * who is mid-session doesn't get bounced backwards.
+ */
+export function inferAutopilotStartPhase(
+  state: ChatState,
+  task: string,
+): LoomPhase {
+  let inferred: LoomPhase | null = null;
+  try {
+    const handoff = buildHandoff(state.sessionDir, "discuss");
+    inferred = inferStartPhase(task, handoff).phase;
+  } catch {
+    // STATE.md missing or session unreadable — fall through.
+    inferred = null;
+  }
+  if (!inferred) return state.currentPhase;
+  const inferredIdx = LOOM_PHASES.indexOf(inferred);
+  const currentIdx = LOOM_PHASES.indexOf(state.currentPhase);
+  // Don't regress: if inference points earlier than currentPhase,
+  // honour the user's progress and start at currentPhase.
+  if (inferredIdx < currentIdx) return state.currentPhase;
+  return inferred;
 }

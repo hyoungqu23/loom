@@ -26,7 +26,12 @@ describe("chat/commands", () => {
   it("parses autopilot and gate commands", () => {
     expect(parseChatInput("/autopilot ship the fix")).toEqual({
       kind: "command",
-      command: { type: "autopilot", task: "ship the fix" },
+      command: {
+        type: "autopilot",
+        task: "ship the fix",
+        startPhase: undefined,
+        endPhase: undefined,
+      },
     });
     expect(parseChatInput("/gate revise tighten tests")).toEqual({
       kind: "command",
@@ -58,6 +63,28 @@ describe("chat/commands", () => {
         note: "tighten tests",
       },
     });
+  });
+
+  it("parses /autopilot --start <phase> --end <phase> with the rest as task", () => {
+    expect(
+      parseChatInput("/autopilot --start build --end review push the fix"),
+    ).toEqual({
+      kind: "command",
+      command: {
+        type: "autopilot",
+        task: "push the fix",
+        startPhase: "build",
+        endPhase: "review",
+      },
+    });
+  });
+
+  it("rejects unknown phase values on /autopilot --start / --end", () => {
+    const result = parseChatInput("/autopilot --start design ship");
+    expect(result.kind).toBe("error");
+    if (result.kind === "error") {
+      expect(result.message).toContain("--start requires a phase");
+    }
   });
 
   it("does not consume the second token as a phase when it is not a phase name", () => {

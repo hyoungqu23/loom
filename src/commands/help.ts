@@ -33,7 +33,9 @@ Workflow:
 
 Chat slash commands (inside loom chat):
   /phase <name> [task]   Run a single phase from chat
-  /autopilot <task>      Loop through phases, pausing for /gate after each
+  /autopilot [--start <phase>] [--end <phase>] <task>
+                         Loop through phases (default: currentPhase or
+                         inferred → reflect), pausing for /gate after each
   /gate proceed|revise|abort [phase] [note]
                          Record a gate decision (optionally targeting a
                          specific phase); drives autopilot too

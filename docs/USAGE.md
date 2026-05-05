@@ -75,7 +75,7 @@ loom chat --feature billing-v2  # 명시적으로 특정 feature 세션 열기 (
 | 명령 | 동작 |
 |---|---|
 | `/phase <name> [task]` | 단일 phase 실행. 종료 후 자동 게이트는 묻지 않는다. |
-| `/autopilot <task>` | 현재 phase부터 시작해 phase마다 게이트 입력을 대기하는 루프. |
+| `/autopilot [--start <phase>] [--end <phase>] <task>` | 시작/종료 phase를 지정해 phase마다 게이트 입력을 대기하는 루프. `--start` 미지정 시 task 텍스트 기반 routing을 시도하고 그게 currentPhase보다 뒤일 때만 적용(아니면 currentPhase 유지). `--end` 미지정 시 reflect까지. |
 | `/gate proceed\|revise\|abort [phase] [note]` | 게이트 결정 기록. `phase`를 명시하면 그 phase에 게이트가 적힌다(생략 시 autopilot 대기 중인 phase 또는 currentPhase 추론). autopilot 루프도 이걸로 진행/재실행/중단. |
 | `/personas a,b` | 다음 실행부터 페르소나 오버라이드. `/secondary`보다 우선. |
 | `/secondary on\|off` | 매트릭스 secondary 페르소나까지 실행할지. |
