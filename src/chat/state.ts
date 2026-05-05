@@ -1,5 +1,18 @@
 import type { LoomPhase } from "../types";
 
+/**
+ * State carried across iterations of a `/autopilot` chat session.
+ *
+ * `task` is the prompt the user originally typed; it is reused on every
+ * phase iteration including `revise` reruns. `endPhase` is the last
+ * phase the loop will run before stopping after a `proceed` gate
+ * (defaults to "reflect" so the full workflow is covered).
+ */
+export type AutopilotContext = {
+  task: string;
+  endPhase: LoomPhase;
+};
+
 export type ChatState = {
   sessionDir: string;
   feature: string;
@@ -15,6 +28,7 @@ export type ChatState = {
     status: "waiting-for-gate";
     phase: LoomPhase;
   };
+  autopilot: AutopilotContext | null;
 };
 
 export type CreateInitialChatStateInput = {
@@ -31,7 +45,9 @@ export type ChatAction =
   | { type: "set-personas"; personas: string[] }
   | { type: "run-start"; phase: LoomPhase }
   | { type: "gate-wait"; phase: LoomPhase }
-  | { type: "run-finish"; phase: LoomPhase };
+  | { type: "run-finish"; phase: LoomPhase }
+  | { type: "autopilot-start"; task: string; endPhase: LoomPhase }
+  | { type: "autopilot-stop" };
 
 export function createInitialChatState(
   input: CreateInitialChatStateInput,
@@ -48,6 +64,7 @@ export function createInitialChatState(
       synthesize: true,
     },
     run: { status: "idle" },
+    autopilot: null,
   };
 }
 
@@ -81,6 +98,13 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         currentPhase: action.phase,
         run: { status: "idle" },
       };
+    case "autopilot-start":
+      return {
+        ...state,
+        autopilot: { task: action.task, endPhase: action.endPhase },
+      };
+    case "autopilot-stop":
+      return { ...state, autopilot: null };
   }
 }
 
@@ -93,5 +117,6 @@ export function renderChatStatus(state: ChatState): string {
     `secondary=${state.options.includeSecondary ? "on" : "off"}`,
     `synthesize=${state.options.synthesize ? "on" : "off"}`,
     `run=${state.run.status}`,
+    `autopilot=${state.autopilot ? "on" : "off"}`,
   ].join(" ");
 }
