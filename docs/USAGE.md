@@ -99,6 +99,7 @@ phase 실행 직후 detail 패널이 자동 갱신된다.
 - `workers/<phase>/synthesis.md`가 있으면 그 콘텐츠 우선(최대 4KB).
 - 합성이 비어 있거나 `/synthesize off`라면 워커 stdout 헤드(페르소나당 200B) 요약.
 - `/open <target>`으로 임의의 시점에 다른 산출물을 패널에 띄울 수 있다.
+- 콘텐츠는 `unified` + `remark-parse` + `remark-gfm`로 markdown AST를 파싱한 뒤 Ink 컴포넌트로 렌더링한다 — heading / list / GFM table / task checkbox / inline `**bold**` `*italic*` `` `code` ``가 컬러·스타일과 함께 표시된다.
 
 ### 0.5.4 취소 / 에러 UX
 

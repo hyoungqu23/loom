@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Box, Text } from "ink";
 import { ChatState } from "./state.js";
+import { renderMarkdown } from "./markdown.js";
 
 export type ChatAppMessage = {
   type: string;
@@ -56,8 +57,9 @@ export function ChatApp(props: ChatAppProps): React.ReactElement {
     React.createElement(
       Box,
       { key: "detail", flexDirection: "column", marginTop: 1 },
-      React.createElement(Text, null, "detail"),
-      React.createElement(Text, null, props.detail || "(empty)"),
+      React.createElement(Text, { dimColor: true }, "detail"),
+      renderMarkdown(props.detail) ??
+        React.createElement(Text, null, "(empty)"),
     ),
     React.createElement(
       Box,
