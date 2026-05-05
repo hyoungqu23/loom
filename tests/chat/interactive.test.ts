@@ -2,8 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import * as React from "react";
 import { render } from "ink-testing-library";
 import {
+  chatUIReducer,
   dispatchChatKey,
   InteractiveChat,
+  type ChatUIState,
 } from "../../src/chat/Interactive.js";
 import { createInitialChatState } from "../../src/chat/state.js";
 
@@ -76,6 +78,93 @@ describe("dispatchChatKey", () => {
     const deps = makeDeps();
     dispatchChatKey({ char: "", ctrl: true }, deps);
     expect(deps.exit).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("chatUIReducer", () => {
+  function seed(): ChatUIState {
+    return {
+      chatState: createInitialChatState({
+        sessionDir: "/tmp/x",
+        feature: "x",
+        currentPhase: "discuss",
+      }),
+      transcript: [],
+      input: "",
+      busy: false,
+    };
+  }
+
+  it("input/append accumulates characters", () => {
+    let s = seed();
+    s = chatUIReducer(s, { type: "input/append", char: "/" });
+    s = chatUIReducer(s, { type: "input/append", char: "s" });
+    expect(s.input).toBe("/s");
+  });
+
+  it("input/backspace drops the last char and stops at empty", () => {
+    let s = { ...seed(), input: "ab" };
+    s = chatUIReducer(s, { type: "input/backspace" });
+    expect(s.input).toBe("a");
+    s = chatUIReducer(s, { type: "input/backspace" });
+    s = chatUIReducer(s, { type: "input/backspace" });
+    expect(s.input).toBe("");
+  });
+
+  it("input/clear empties the buffer regardless of content", () => {
+    const s = chatUIReducer(
+      { ...seed(), input: "/status" },
+      { type: "input/clear" },
+    );
+    expect(s.input).toBe("");
+  });
+
+  it("transcript/append adds an entry to the end", () => {
+    const s = chatUIReducer(seed(), {
+      type: "transcript/append",
+      entry: { type: "system", text: "hi" },
+    });
+    expect(s.transcript).toEqual([{ type: "system", text: "hi" }]);
+  });
+
+  it("transcript/replace swaps the whole transcript (used by live progress)", () => {
+    const s = chatUIReducer(
+      { ...seed(), transcript: [{ type: "user", text: "old" }] },
+      {
+        type: "transcript/replace",
+        transcript: [{ type: "system", text: "new" }],
+      },
+    );
+    expect(s.transcript).toEqual([{ type: "system", text: "new" }]);
+  });
+
+  it("submit/start flips busy on; submit/finish applies state and transcript atomically", () => {
+    let s = seed();
+    s = chatUIReducer(s, { type: "submit/start" });
+    expect(s.busy).toBe(true);
+
+    const nextState = { ...s.chatState, currentPhase: "plan" as const };
+    s = chatUIReducer(s, {
+      type: "submit/finish",
+      chatState: nextState,
+      transcript: [{ type: "system", text: "done" }],
+    });
+    expect(s.busy).toBe(false);
+    expect(s.chatState).toBe(nextState);
+    expect(s.transcript).toEqual([{ type: "system", text: "done" }]);
+  });
+
+  it("submit/error clears busy and records the error entry", () => {
+    let s = chatUIReducer(seed(), { type: "submit/start" });
+    s = chatUIReducer(s, {
+      type: "submit/error",
+      entry: { type: "error", text: "chat error: boom" },
+    });
+    expect(s.busy).toBe(false);
+    expect(s.transcript[s.transcript.length - 1]).toEqual({
+      type: "error",
+      text: "chat error: boom",
+    });
   });
 });
 

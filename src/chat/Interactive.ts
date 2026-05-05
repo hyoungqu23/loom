@@ -38,17 +38,6 @@ export type ChatKeyDeps = {
   exit: () => void;
 };
 
-/**
- * Pure key dispatcher used by InteractiveChat's useInput callback.
- *
- * Cancellation policy:
- *   - Ctrl+C while idle  → call `exit()` so the host can shut down.
- *   - Ctrl+C while busy  → append a notice; the in-flight run keeps
- *     going (true cancellation requires runner-level support).
- *
- * While `busy` is true, normal keystrokes are dropped so a partial
- * input cannot accumulate against the wrong run.
- */
 export function dispatchChatKey(
   event: ChatKeyEvent,
   deps: ChatKeyDeps,
@@ -77,6 +66,68 @@ export function dispatchChatKey(
   }
 }
 
+/**
+ * Reducer-managed UI state for InteractiveChat. Pulling the four
+ * pieces (chatState, transcript, input, busy) into a single reducer
+ * means the controller round-trip applies as ONE state transition and
+ * neighbours never observe a half-updated snapshot. This also lets
+ * useInput's callback close over a stable `dispatch` reference rather
+ * than the ever-changing setX trio.
+ */
+export type ChatUIState = {
+  chatState: ChatState;
+  transcript: Transcript;
+  input: string;
+  busy: boolean;
+};
+
+export type ChatUIAction =
+  | { type: "input/append"; char: string }
+  | { type: "input/backspace" }
+  | { type: "input/clear" }
+  | { type: "transcript/append"; entry: TranscriptMessage }
+  | { type: "transcript/replace"; transcript: Transcript }
+  | { type: "submit/start" }
+  | {
+      type: "submit/finish";
+      chatState: ChatState;
+      transcript: Transcript;
+    }
+  | { type: "submit/error"; entry: TranscriptMessage };
+
+export function chatUIReducer(
+  state: ChatUIState,
+  action: ChatUIAction,
+): ChatUIState {
+  switch (action.type) {
+    case "input/append":
+      return { ...state, input: state.input + action.char };
+    case "input/backspace":
+      return { ...state, input: state.input.slice(0, -1) };
+    case "input/clear":
+      return { ...state, input: "" };
+    case "transcript/append":
+      return { ...state, transcript: [...state.transcript, action.entry] };
+    case "transcript/replace":
+      return { ...state, transcript: action.transcript };
+    case "submit/start":
+      return { ...state, busy: true };
+    case "submit/finish":
+      return {
+        ...state,
+        busy: false,
+        chatState: action.chatState,
+        transcript: action.transcript,
+      };
+    case "submit/error":
+      return {
+        ...state,
+        busy: false,
+        transcript: [...state.transcript, action.entry],
+      };
+  }
+}
+
 export type InteractiveProps = {
   initialState: ChatState;
   initialTranscript?: Transcript;
@@ -96,43 +147,58 @@ export function InteractiveChat(
   const ink = useApp();
   const onExit = props.onExit ?? (() => ink.exit());
 
-  const [chatState, setChatState] = React.useState<ChatState>(
-    props.initialState,
-  );
-  const [transcript, setTranscript] = React.useState<Transcript>(
-    props.initialTranscript ?? [],
-  );
-  const [input, setInput] = React.useState<string>("");
-  const [busy, setBusy] = React.useState<boolean>(false);
+  const [ui, dispatch] = React.useReducer(chatUIReducer, undefined, () => ({
+    chatState: props.initialState,
+    transcript: props.initialTranscript ?? [],
+    input: "",
+    busy: false,
+  }));
+
+  // Mirror the latest UI snapshot into a ref so submit() / useInput
+  // callbacks can read fresh values without listing every field in
+  // their dependency arrays. Keeps the callbacks themselves stable
+  // across renders.
+  const uiRef = React.useRef(ui);
+  uiRef.current = ui;
+  const handleRef = React.useRef(handle);
+  handleRef.current = handle;
+  const onExitRef = React.useRef(onExit);
+  onExitRef.current = onExit;
 
   const submit = React.useCallback(async (): Promise<void> => {
-    const text = input;
-    setInput("");
+    const text = uiRef.current.input;
+    dispatch({ type: "input/clear" });
     const trimmed = text.trim();
     if (!trimmed) return;
     if (trimmed === "/quit") {
-      onExit();
+      onExitRef.current();
       return;
     }
-    setBusy(true);
+    dispatch({ type: "submit/start" });
     try {
-      const result = await handle(chatState, transcript, text, {
-        onTranscript: (live) => setTranscript(live),
+      const result = await handleRef.current(
+        uiRef.current.chatState,
+        uiRef.current.transcript,
+        text,
+        {
+          onTranscript: (live) =>
+            dispatch({ type: "transcript/replace", transcript: live }),
+        },
+      );
+      dispatch({
+        type: "submit/finish",
+        chatState: result.state,
+        transcript: result.transcript,
       });
-      setChatState(result.state);
-      setTranscript(result.transcript);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : String(error);
-      const entry: TranscriptMessage = {
-        type: "error",
-        text: `chat error: ${message}`,
-      };
-      setTranscript((current) => [...current, entry]);
-    } finally {
-      setBusy(false);
+      dispatch({
+        type: "submit/error",
+        entry: { type: "error", text: `chat error: ${message}` },
+      });
     }
-  }, [chatState, handle, input, onExit, transcript]);
+  }, []);
 
   useInput((char, key) => {
     dispatchChatKey(
@@ -145,24 +211,25 @@ export function InteractiveChat(
         meta: key.meta,
       },
       {
-        busy,
-        appendNotice: (text) => {
-          const entry: TranscriptMessage = { type: "system", text };
-          setTranscript((current) => [...current, entry]);
-        },
-        removeLastChar: () => setInput((current) => current.slice(0, -1)),
-        appendChar: (next) => setInput((current) => current + next),
+        busy: uiRef.current.busy,
+        appendNotice: (text) =>
+          dispatch({
+            type: "transcript/append",
+            entry: { type: "system", text },
+          }),
+        removeLastChar: () => dispatch({ type: "input/backspace" }),
+        appendChar: (next) => dispatch({ type: "input/append", char: next }),
         submit: () => void submit(),
-        exit: onExit,
+        exit: () => onExitRef.current(),
       },
     );
   });
 
-  const detail = chatState.detail || DEFAULT_DETAIL_PLACEHOLDER;
+  const detail = ui.chatState.detail || DEFAULT_DETAIL_PLACEHOLDER;
   return React.createElement(ChatApp, {
-    state: chatState,
-    messages: transcript,
+    state: ui.chatState,
+    messages: ui.transcript,
     detail,
-    input,
+    input: ui.input,
   });
 }
