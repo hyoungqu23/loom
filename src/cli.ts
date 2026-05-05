@@ -1,21 +1,21 @@
 import * as path from "path";
-import { Flags } from "./types";
-import { setActiveWorkspace } from "./workspace";
-import { parseArgs, flagBool, flagString } from "./util/parse-args";
-import { initWorkspace } from "./commands/init";
-import { runConfigCommand } from "./commands/config";
-import { runDoctor } from "./commands/doctor";
-import { runPhaseCommand } from "./commands/phase";
-import { runAutopilot } from "./commands/autopilot";
-import { printAgents, runSkillsCommand } from "./commands/listings";
-import { printHelp } from "./commands/help";
-import { runMemoryCommand } from "./commands/memory";
-import { runMetricsCommand } from "./commands/metrics";
-import { runExportCommand } from "./commands/export";
-import { runCronCommand } from "./commands/cron";
-import { runRuntime } from "./engine";
-import { buildRuntimeCommand } from "./runtimes";
-import { startChat } from "./chat/start";
+import { Flags } from "./types.js";
+import { setActiveWorkspace } from "./workspace.js";
+import { parseArgs, flagBool, flagString } from "./util/parse-args.js";
+import { initWorkspace } from "./commands/init.js";
+import { runConfigCommand } from "./commands/config.js";
+import { runDoctor } from "./commands/doctor.js";
+import { runPhaseCommand } from "./commands/phase.js";
+import { runAutopilot } from "./commands/autopilot.js";
+import { printAgents, runSkillsCommand } from "./commands/listings.js";
+import { printHelp } from "./commands/help.js";
+import { runMemoryCommand } from "./commands/memory.js";
+import { runMetricsCommand } from "./commands/metrics.js";
+import { runExportCommand } from "./commands/export.js";
+import { runCronCommand } from "./commands/cron.js";
+import { runRuntime } from "./engine/index.js";
+import { buildRuntimeCommand } from "./runtimes/index.js";
+import { startChat } from "./chat/start.js";
 
 type Handler = (positionals: string[], flags: Flags) => Promise<void> | void;
 

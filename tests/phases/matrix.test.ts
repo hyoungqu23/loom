@@ -1,15 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
-import { getPackageRoot } from "../../src/workspace";
+import { getPackageRoot } from "../../src/workspace.js";
 import {
   parsePhaseMatrix,
   loadPhaseMatrix,
   personasForPhase,
   primaryPersonaForPhase,
   BUILTIN_PHASE_MATRIX,
-} from "../../src/phases/matrix";
-import { LoomPhase } from "../../src/types";
+} from "../../src/phases/matrix.js";
+import { LoomPhase } from "../../src/types.js";
 
 const MATRIX_FILE = path.join(getPackageRoot(), "harness", "phases.md");
 

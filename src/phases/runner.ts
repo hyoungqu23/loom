@@ -9,10 +9,10 @@ import {
   PhaseState,
   TeamHooks,
   WorkerResult,
-} from "../types";
-import { resolveAgentRun, runWorkerAsync } from "../engine/worker";
-import { flagBool, flagString } from "../util/parse-args";
-import { createRenderer, type FrameDriver } from "../tui";
+} from "../types.js";
+import { resolveAgentRun, runWorkerAsync } from "../engine/worker.js";
+import { flagBool, flagString } from "../util/parse-args.js";
+import { createRenderer, type FrameDriver } from "../tui/index.js";
 import {
   appendWorkerOutput,
   buildHandoff,
@@ -22,8 +22,8 @@ import {
   writeContext,
   writePlan,
   writeState,
-} from "./session";
-import { loadPhaseMatrix, personasForPhase } from "./matrix";
+} from "./session.js";
+import { loadPhaseMatrix, personasForPhase } from "./matrix.js";
 import {
   extractContextFromOutput,
   extractMemoryCandidatesFromReflectOutput,
@@ -32,10 +32,10 @@ import {
   isPlanDeltaEmpty,
   mergeContext,
   mergePlan,
-} from "./extract";
-import { writeMemoryCandidates } from "../memory/store";
-import { writeSkillCandidate } from "../agents/skills";
-import { appendMetricEvent } from "../metrics/events";
+} from "./extract.js";
+import { writeMemoryCandidates } from "../memory/store.js";
+import { writeSkillCandidate } from "../agents/skills.js";
+import { appendMetricEvent } from "../metrics/events.js";
 
 export type PhaseRunOptions = {
   task: string;

@@ -1,4 +1,4 @@
-import { RunOptions, RuntimeConfig, RuntimeSpec } from "../types";
+import { RunOptions, RuntimeConfig, RuntimeSpec } from "../types.js";
 
 /** A runtime adapter knows how to translate a prompt + options into a child process spec. */
 export type RuntimeAdapter = {

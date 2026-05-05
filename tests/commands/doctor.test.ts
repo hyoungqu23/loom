@@ -2,15 +2,15 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { captureConsole } from "../../src/util/capture";
-import { runDoctor } from "../../src/commands/doctor";
-import { clearDefaultsCache, saveWorkspaceConfig } from "../../src/config";
-import { clearCommandCheckCache } from "../../src/util/shell";
+import { captureConsole } from "../../src/util/capture.js";
+import { runDoctor } from "../../src/commands/doctor.js";
+import { clearDefaultsCache, saveWorkspaceConfig } from "../../src/config.js";
+import { clearCommandCheckCache } from "../../src/util/shell.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

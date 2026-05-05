@@ -4,7 +4,7 @@ import {
   formatDuration,
   formatPersonaLabel,
   icons,
-} from "../../src/tui/format";
+} from "../../src/tui/format.js";
 
 describe("formatDuration", () => {
   it("renders seconds-only as 0:SS with zero pad", () => {

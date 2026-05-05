@@ -1,5 +1,5 @@
-import { ChatParseResult } from "./commands";
-import { ChatRuntimeMessage } from "./runtime";
+import { ChatParseResult } from "./commands.js";
+import { ChatRuntimeMessage } from "./runtime.js";
 
 export type TranscriptMessage = {
   type: "user" | "system" | "error" | "gate";

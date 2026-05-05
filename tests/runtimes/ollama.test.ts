@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ollamaAdapter } from "../../src/runtimes/ollama";
-import { RuntimeConfig } from "../../src/types";
+import { ollamaAdapter } from "../../src/runtimes/ollama.js";
+import { RuntimeConfig } from "../../src/types.js";
 
 const baseConfig = (overrides: Partial<RuntimeConfig> = {}): RuntimeConfig => ({
   command: "ollama",

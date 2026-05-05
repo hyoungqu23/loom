@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { runSpec } from "../../src/engine/spawn";
-import { RuntimeSpec, WorkerStream } from "../../src/types";
+import { runSpec } from "../../src/engine/spawn.js";
+import { RuntimeSpec, WorkerStream } from "../../src/types.js";
 
 const nodeSpec = (script: string, stdin?: string): RuntimeSpec => ({
   command: "node",

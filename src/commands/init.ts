@@ -1,13 +1,13 @@
 import * as fs from "fs";
 import * as path from "path";
-import { Flags } from "../types";
+import { Flags } from "../types.js";
 import {
   ensureWorkspaceState,
   setActiveWorkspace,
   workspaceRoot,
   defaultsPath,
-} from "../workspace";
-import { flagBool, flagString } from "../util/parse-args";
+} from "../workspace.js";
+import { flagBool, flagString } from "../util/parse-args.js";
 
 function writeFileIfMissing(
   filePath: string,

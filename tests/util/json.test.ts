@@ -6,7 +6,7 @@ import {
   readJson,
   readJsonRequired,
   writeJson,
-} from "../../src/util/json";
+} from "../../src/util/json.js";
 
 let tmp: string;
 

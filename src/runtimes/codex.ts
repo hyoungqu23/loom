@@ -1,5 +1,5 @@
-import { RuntimeAdapter, BuildSpecArgs } from "./adapter";
-import { RuntimeSpec } from "../types";
+import { RuntimeAdapter, BuildSpecArgs } from "./adapter.js";
+import { RuntimeSpec } from "../types.js";
 
 export const codexAdapter: RuntimeAdapter = {
   name: "codex",

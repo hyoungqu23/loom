@@ -8,13 +8,13 @@ import {
   cronRunsRoot,
   listCronJobs,
   runCronJob,
-} from "../../src/cron/jobs";
-import { loadMetricEvents } from "../../src/metrics/events";
+} from "../../src/cron/jobs.js";
+import { loadMetricEvents } from "../../src/metrics/events.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

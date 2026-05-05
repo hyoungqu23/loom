@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { setActiveWorkspace } from "../../src/workspace";
+import { setActiveWorkspace } from "../../src/workspace.js";
 import {
   createPhaseSession,
   loadState,
@@ -15,8 +15,8 @@ import {
   resolvePhaseSession,
   appendWorkerOutput,
   buildHandoff,
-} from "../../src/phases/session";
-import { PhaseState, SessionContext, PhasePlan } from "../../src/types";
+} from "../../src/phases/session.js";
+import { PhaseState, SessionContext, PhasePlan } from "../../src/types.js";
 
 let tmp: string;
 let originalWorkspace: string;

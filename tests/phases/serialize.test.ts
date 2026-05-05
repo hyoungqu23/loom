@@ -6,8 +6,8 @@ import {
   parseContext,
   serializePlan,
   parsePlan,
-} from "../../src/phases/serialize";
-import { PhaseState, SessionContext, PhasePlan } from "../../src/types";
+} from "../../src/phases/serialize.js";
+import { PhaseState, SessionContext, PhasePlan } from "../../src/types.js";
 
 describe("phases/serialize", () => {
   describe("PhaseState <-> STATE.md", () => {

@@ -16,12 +16,12 @@
  */
 import * as fs from "fs";
 import * as path from "path";
-import { loadDefaults } from "../src/config";
-import { loadAgent } from "../src/agents/load";
-import { withRolePrompt } from "../src/agents/prompt";
-import { runRuntime } from "../src/engine";
-import { parseArgs } from "../src/util/parse-args";
-import { workspaceRoot } from "../src/workspace";
+import { loadDefaults } from "../src/config.js";
+import { loadAgent } from "../src/agents/load.js";
+import { withRolePrompt } from "../src/agents/prompt.js";
+import { runRuntime } from "../src/engine.js";
+import { parseArgs } from "../src/util/parse-args.js";
+import { workspaceRoot } from "../src/workspace.js";
 
 type PersonaCase = {
   id: string;

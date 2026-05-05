@@ -9,7 +9,7 @@
  *   3. else isTTY                              → color if true
  */
 
-import type { ColorMode } from "./ansi";
+import type { ColorMode } from "./ansi.js";
 
 export type TtyEnv = {
   isTTY: boolean;

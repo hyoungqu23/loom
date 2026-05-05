@@ -7,13 +7,13 @@ import {
   loadDefaults,
   loadWorkspaceConfig,
   saveWorkspaceConfig,
-} from "../src/config";
+} from "../src/config.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
   workspaceConfigPath,
-} from "../src/workspace";
+} from "../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

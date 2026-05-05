@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
-import { GateDecision, LoomPhase } from "../types";
-import { ensureWorkspaceState } from "../workspace";
+import { GateDecision, LoomPhase } from "../types.js";
+import { ensureWorkspaceState } from "../workspace.js";
 
 export type PhaseMetric = {
   type: "phase";

@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { createPhaseSession, loadState } from "../../src/phases/session";
-import { recordPhaseGate } from "../../src/phases/gate";
-import { getActiveWorkspace, setActiveWorkspace } from "../../src/workspace";
+import { createPhaseSession, loadState } from "../../src/phases/session.js";
+import { recordPhaseGate } from "../../src/phases/gate.js";
+import { getActiveWorkspace, setActiveWorkspace } from "../../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

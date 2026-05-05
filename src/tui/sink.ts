@@ -11,7 +11,7 @@
  *   prints the line at the cursor, and re-renders the frame underneath.
  */
 
-import { createDrawSurface, type DrawSurface } from "./draw";
+import { createDrawSurface, type DrawSurface } from "./draw.js";
 
 export type Sink = {
   log(line: string): void;

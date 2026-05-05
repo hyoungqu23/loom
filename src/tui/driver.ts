@@ -5,15 +5,15 @@
  * pre-TUI Loom logs so CI redirects remain stable.
  */
 
-import { LOOM_PHASES, type LoomPhase } from "../types";
-import type { ColorMode } from "./ansi";
+import { LOOM_PHASES, type LoomPhase } from "../types.js";
+import type { ColorMode } from "./ansi.js";
 import {
   renderFrame,
   type PhaseRow,
   type RenderState,
   type TerminalReason,
-} from "./frame";
-import { createFrameSink, createPlainSink, type Sink } from "./sink";
+} from "./frame.js";
+import { createFrameSink, createPlainSink, type Sink } from "./sink.js";
 
 export type PhaseSummary = {
   workers: number;

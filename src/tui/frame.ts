@@ -7,15 +7,15 @@
  * once the phase finishes.
  */
 
-import { LOOM_PHASES, type LoomPhase } from "../types";
-import { createAnsi, type Ansi, type ColorMode } from "./ansi";
+import { LOOM_PHASES, type LoomPhase } from "../types.js";
+import { createAnsi, type Ansi, type ColorMode } from "./ansi.js";
 import {
   formatBytes,
   formatDuration,
   formatPersonaLabel,
   icons,
   type Icons,
-} from "./format";
+} from "./format.js";
 
 export type WorkerRow = {
   persona: string;

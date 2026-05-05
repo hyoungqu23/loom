@@ -1,14 +1,14 @@
 import * as fs from "fs";
 import * as path from "path";
 import { describe, expect, it } from "vitest";
-import { loadDefaults } from "../../src/config";
+import { loadDefaults } from "../../src/config.js";
 import {
   loadPhaseMatrix,
   parsePhaseMatrix,
   BUILTIN_PHASE_MATRIX,
-} from "../../src/phases/matrix";
-import { LOOM_PHASES, LoomPhase } from "../../src/types";
-import { getPackageRoot } from "../../src/workspace";
+} from "../../src/phases/matrix.js";
+import { LOOM_PHASES, LoomPhase } from "../../src/types.js";
+import { getPackageRoot } from "../../src/workspace.js";
 
 const matrixFile = path.join(getPackageRoot(), "harness", "phases.md");
 

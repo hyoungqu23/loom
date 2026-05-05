@@ -1,12 +1,12 @@
 import * as fs from "fs";
-import { Defaults } from "./types";
+import { Defaults } from "./types.js";
 import {
   defaultsPath,
   ensureWorkspaceState,
   workspaceConfigPath,
-} from "./workspace";
-import { writeJson } from "./util/json";
-import { deepMerge, JsonObject } from "./util/values";
+} from "./workspace.js";
+import { writeJson } from "./util/json.js";
+import { deepMerge, JsonObject } from "./util/values.js";
 
 let cachedDefaults: Defaults | null = null;
 

@@ -2,14 +2,14 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { resolveAgentRun, runWorkerAsync } from "../../src/engine/worker";
-import { clearDefaultsCache, saveWorkspaceConfig } from "../../src/config";
+import { resolveAgentRun, runWorkerAsync } from "../../src/engine/worker.js";
+import { clearDefaultsCache, saveWorkspaceConfig } from "../../src/config.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
-import { AgentRun, TeamHooks } from "../../src/types";
+} from "../../src/workspace.js";
+import { AgentRun, TeamHooks } from "../../src/types.js";
 
 let tmp: string;
 let originalWorkspace: string;

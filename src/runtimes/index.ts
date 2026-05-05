@@ -1,14 +1,14 @@
 import * as path from "path";
 import { spawnSync } from "child_process";
-import { RunOptions, RuntimeName, RuntimeSpec, RuntimeVersionInfo } from "../types";
-import { loadDefaults } from "../config";
-import { workspaceRoot } from "../workspace";
-import { RuntimeAdapter } from "./adapter";
-import { codexAdapter } from "./codex";
-import { claudeAdapter } from "./claude";
-import { geminiAdapter } from "./gemini";
-import { ollamaAdapter } from "./ollama";
-import { filterEnv } from "./env";
+import { RunOptions, RuntimeName, RuntimeSpec, RuntimeVersionInfo } from "../types.js";
+import { loadDefaults } from "../config.js";
+import { workspaceRoot } from "../workspace.js";
+import { RuntimeAdapter } from "./adapter.js";
+import { codexAdapter } from "./codex.js";
+import { claudeAdapter } from "./claude.js";
+import { geminiAdapter } from "./gemini.js";
+import { ollamaAdapter } from "./ollama.js";
+import { filterEnv } from "./env.js";
 
 const ADAPTERS: { [key: string]: RuntimeAdapter } = {
   codex: codexAdapter,

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createGateProvider } from "../../src/tui/gate";
+import { createGateProvider } from "../../src/tui/gate.js";
 
 class MockWriter {
   chunks: string[] = [];

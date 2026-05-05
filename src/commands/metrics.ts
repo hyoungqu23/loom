@@ -1,5 +1,5 @@
-import { Flags } from "../types";
-import { summarizeMetrics } from "../metrics/events";
+import { Flags } from "../types.js";
+import { summarizeMetrics } from "../metrics/events.js";
 
 export function runMetricsCommand(positionals: string[], _flags: Flags): void {
   const subcommand = positionals[0] || "summary";

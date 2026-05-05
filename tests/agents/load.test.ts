@@ -2,14 +2,14 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { listAgentNames, loadAgent } from "../../src/agents/load";
-import { clearDefaultsCache } from "../../src/config";
+import { listAgentNames, loadAgent } from "../../src/agents/load.js";
+import { clearDefaultsCache } from "../../src/config.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
   workspaceConfigPath,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

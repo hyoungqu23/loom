@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { LoomPhase, LOOM_PHASES } from "../types";
+import { LoomPhase, LOOM_PHASES } from "../types.js";
 
 /**
  * `/open` previews keep the chat detail panel readable: single-file

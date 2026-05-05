@@ -2,20 +2,20 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { exportTrajectory } from "../../src/trajectory/export";
+import { exportTrajectory } from "../../src/trajectory/export.js";
 import {
   appendWorkerOutput,
   createPhaseSession,
   loadState,
   writeState,
   writeContext,
-} from "../../src/phases/session";
+} from "../../src/phases/session.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
-import { appendMetricEvent } from "../../src/metrics/events";
+} from "../../src/workspace.js";
+import { appendMetricEvent } from "../../src/metrics/events.js";
 
 let tmp: string;
 let originalWorkspace: string;

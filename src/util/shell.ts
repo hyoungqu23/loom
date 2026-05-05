@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { CommandCheck } from "../types";
+import { CommandCheck } from "../types.js";
 
 const COMMAND_CHECK_CACHE = new Map<string, CommandCheck>();
 

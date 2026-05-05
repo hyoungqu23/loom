@@ -1,4 +1,4 @@
-import { RuntimeName } from "../types";
+import { RuntimeName } from "../types.js";
 
 export type RuntimeCapability = {
   runtime: RuntimeName;

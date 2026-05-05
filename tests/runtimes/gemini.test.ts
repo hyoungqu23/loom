@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { geminiAdapter } from "../../src/runtimes/gemini";
-import { RuntimeConfig, RunOptions } from "../../src/types";
+import { geminiAdapter } from "../../src/runtimes/gemini.js";
+import { RuntimeConfig, RunOptions } from "../../src/types.js";
 
 const baseConfig = (overrides: Partial<RuntimeConfig> = {}): RuntimeConfig => ({
   command: "gemini",

@@ -1,14 +1,14 @@
 import * as fs from "fs";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { readRelativeFile, withRolePrompt } from "../../src/agents/prompt";
-import { clearDefaultsCache } from "../../src/config";
-import { AgentConfig } from "../../src/types";
+import { readRelativeFile, withRolePrompt } from "../../src/agents/prompt.js";
+import { clearDefaultsCache } from "../../src/config.js";
+import { AgentConfig } from "../../src/types.js";
 import {
   getActiveWorkspace,
   getPackageRoot,
   setActiveWorkspace,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 const baseAgent = (overrides: Partial<AgentConfig> = {}): AgentConfig => ({
   description: "",

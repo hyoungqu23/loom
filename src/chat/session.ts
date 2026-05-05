@@ -4,7 +4,7 @@ import {
   listPhaseSessions,
   loadState,
   resolvePhaseSession,
-} from "../phases/session";
+} from "../phases/session.js";
 
 export type ChatSessionResolution = {
   sessionDir: string;

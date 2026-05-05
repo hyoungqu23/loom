@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { renderFrame, type RenderState, type PhaseRow } from "../../src/tui/frame";
-import { LOOM_PHASES, type LoomPhase } from "../../src/types";
+import { renderFrame, type RenderState, type PhaseRow } from "../../src/tui/frame.js";
+import { LOOM_PHASES, type LoomPhase } from "../../src/types.js";
 
 function queuedAll(): PhaseRow[] {
   return LOOM_PHASES.map<PhaseRow>((phase) => ({ phase, status: "queued" }));

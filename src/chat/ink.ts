@@ -1,15 +1,16 @@
+import type * as ReactNS from "react";
+import type * as InkNS from "ink";
+
 export type InkModules = {
-  React: {
-    createElement: (...args: unknown[]) => unknown;
-  };
-  render: (...args: unknown[]) => unknown;
-  Box: (...args: unknown[]) => unknown;
-  Text: (...args: unknown[]) => unknown;
+  React: typeof ReactNS;
+  render: typeof InkNS.render;
+  Box: typeof InkNS.Box;
+  Text: typeof InkNS.Text;
 };
 
 export async function loadInkModules(): Promise<InkModules> {
-  const React = require("react");
-  const ink = require("ink");
+  const React = await import("react");
+  const ink = await import("ink");
   return {
     React,
     render: ink.render,

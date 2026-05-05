@@ -1,10 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
-import { AgentConfig, LoomPhase, PhaseHandoff } from "../types";
-import { getPackageRoot } from "../workspace";
-import { loadDefaults } from "../config";
-import { skillContext } from "./skills";
-import { renderRelevantMemory } from "../memory/store";
+import { AgentConfig, LoomPhase, PhaseHandoff } from "../types.js";
+import { getPackageRoot } from "../workspace.js";
+import { loadDefaults } from "../config.js";
+import { skillContext } from "./skills.js";
+import { renderRelevantMemory } from "../memory/store.js";
 
 const COMMON_PROMPT_RELATIVE = path.join("harness", "prompts", "_common.md");
 

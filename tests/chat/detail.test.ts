@@ -6,18 +6,18 @@ import {
   buildPhaseDetail,
   readSynthesis,
   summarizeWorkers,
-} from "../../src/chat/detail";
-import { handleChatInput } from "../../src/chat/controller";
-import { createInitialChatState } from "../../src/chat/state";
-import { clearDefaultsCache, saveWorkspaceConfig } from "../../src/config";
-import { createPhaseSession } from "../../src/phases/session";
+} from "../../src/chat/detail.js";
+import { handleChatInput } from "../../src/chat/controller.js";
+import { createInitialChatState } from "../../src/chat/state.js";
+import { clearDefaultsCache, saveWorkspaceConfig } from "../../src/config.js";
+import { createPhaseSession } from "../../src/phases/session.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
-import { captureConsole } from "../../src/util/capture";
-import type { WorkerResult } from "../../src/types";
+} from "../../src/workspace.js";
+import { captureConsole } from "../../src/util/capture.js";
+import type { WorkerResult } from "../../src/types.js";
 
 let tmp: string;
 let originalWorkspace: string;

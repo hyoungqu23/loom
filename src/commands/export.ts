@@ -1,6 +1,6 @@
-import { Flags } from "../types";
-import { flagString } from "../util/parse-args";
-import { exportTrajectory } from "../trajectory/export";
+import { Flags } from "../types.js";
+import { flagString } from "../util/parse-args.js";
+import { exportTrajectory } from "../trajectory/export.js";
 
 export function runExportCommand(positionals: string[], flags: Flags): void {
   const subcommand = positionals[0];

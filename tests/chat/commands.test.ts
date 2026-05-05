@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseChatInput } from "../../src/chat/commands";
+import { parseChatInput } from "../../src/chat/commands.js";
 
 describe("chat/commands", () => {
   it("classifies plain natural language separately from slash commands", () => {

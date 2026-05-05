@@ -9,17 +9,17 @@ import {
   createFrameDriver,
   type DriverScheduler,
   type FrameDriver,
-} from "./driver";
-import { detectColorMode, detectFrameEnabled, type TtyEnv } from "./isTty";
+} from "./driver.js";
+import { detectColorMode, detectFrameEnabled, type TtyEnv } from "./isTty.js";
 
 export type {
   FrameDriver,
   PhaseSummary,
   DriverScheduler,
-} from "./driver";
-export { createGateProvider } from "./gate";
-export type { GateContext, GateOutcome, GateProvider } from "./gate";
-export type { ColorMode } from "./ansi";
+} from "./driver.js";
+export { createGateProvider } from "./gate.js";
+export type { GateContext, GateOutcome, GateProvider } from "./gate.js";
+export type { ColorMode } from "./ansi.js";
 
 export type CreateRendererOptions = {
   feature?: string;

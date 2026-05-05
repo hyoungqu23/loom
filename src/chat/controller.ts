@@ -1,13 +1,13 @@
-import { parseChatInput } from "./commands";
-import { executeChatCommand } from "./runtime";
-import { ChatState, chatReducer } from "./state";
-import { buildPhaseDetail } from "./detail";
+import { parseChatInput } from "./commands.js";
+import { executeChatCommand } from "./runtime.js";
+import { ChatState, chatReducer } from "./state.js";
+import { buildPhaseDetail } from "./detail.js";
 import {
   appendParsedInputToTranscript,
   appendRuntimeMessagesToTranscript,
   Transcript,
   TranscriptMessage,
-} from "./transcript";
+} from "./transcript.js";
 
 export type ChatInputResult = {
   state: ChatState;

@@ -4,9 +4,9 @@ import {
   getRuntimeAdapter,
   listRuntimeNames,
   runtimeVersion,
-} from "../../src/runtimes/index";
-import { clearDefaultsCache } from "../../src/config";
-import { getActiveWorkspace, setActiveWorkspace } from "../../src/workspace";
+} from "../../src/runtimes/index.js";
+import { clearDefaultsCache } from "../../src/config.js";
+import { getActiveWorkspace, setActiveWorkspace } from "../../src/workspace.js";
 
 let originalWorkspace: string;
 

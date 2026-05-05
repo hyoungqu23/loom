@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { codexAdapter } from "../../src/runtimes/codex";
-import { RuntimeConfig, RunOptions } from "../../src/types";
+import { codexAdapter } from "../../src/runtimes/codex.js";
+import { RuntimeConfig, RunOptions } from "../../src/types.js";
 
 const baseConfig = (overrides: Partial<RuntimeConfig> = {}): RuntimeConfig => ({
   command: "codex",

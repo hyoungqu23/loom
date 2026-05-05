@@ -3,7 +3,7 @@ import {
   appendParsedInputToTranscript,
   appendRuntimeMessagesToTranscript,
   createTranscript,
-} from "../../src/chat/transcript";
+} from "../../src/chat/transcript.js";
 
 describe("chat/transcript", () => {
   it("appends plain user input as a user transcript message", () => {

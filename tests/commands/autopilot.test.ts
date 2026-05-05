@@ -2,16 +2,16 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { captureConsole } from "../../src/util/capture";
-import { runAutopilot } from "../../src/commands/autopilot";
-import { resolvePhaseSession, loadState } from "../../src/phases/session";
-import { GateDecision, LoomPhase } from "../../src/types";
-import { clearDefaultsCache, saveWorkspaceConfig } from "../../src/config";
+import { captureConsole } from "../../src/util/capture.js";
+import { runAutopilot } from "../../src/commands/autopilot.js";
+import { resolvePhaseSession, loadState } from "../../src/phases/session.js";
+import { GateDecision, LoomPhase } from "../../src/types.js";
+import { clearDefaultsCache, saveWorkspaceConfig } from "../../src/config.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

@@ -9,12 +9,12 @@ import {
   skillCatalog,
   skillContext,
   writeSkillCandidate,
-} from "../../src/agents/skills";
-import { AgentConfig } from "../../src/types";
+} from "../../src/agents/skills.js";
+import { AgentConfig } from "../../src/types.js";
 import {
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 const baseAgent = (overrides: Partial<AgentConfig> = {}): AgentConfig => ({
   description: "",

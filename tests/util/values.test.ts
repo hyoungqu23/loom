@@ -7,7 +7,7 @@ import {
   normalizeConfigPath,
   parseConfigValue,
   setNestedValue,
-} from "../../src/util/values";
+} from "../../src/util/values.js";
 
 describe("isJsonObject", () => {
   it("accepts plain objects", () => {

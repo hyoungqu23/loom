@@ -2,14 +2,14 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { runMetricsCommand } from "../../src/commands/metrics";
-import { appendMetricEvent } from "../../src/metrics/events";
-import { captureConsole } from "../../src/util/capture";
+import { runMetricsCommand } from "../../src/commands/metrics.js";
+import { appendMetricEvent } from "../../src/metrics/events.js";
+import { captureConsole } from "../../src/util/capture.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

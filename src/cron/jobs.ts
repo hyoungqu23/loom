@@ -1,17 +1,17 @@
 import * as path from "path";
 import * as fs from "fs";
-import { RuntimeResult, RuntimeSpec } from "../types";
+import { RuntimeResult, RuntimeSpec } from "../types.js";
 import {
   ensureWithinWorkspace,
   ensureWorkspaceState,
   workspaceRoot,
-} from "../workspace";
-import { readJson, writeJson } from "../util/json";
-import { runSpec } from "../engine/spawn";
-import { DEFAULT_RUNTIME_TIMEOUT_MS } from "../engine/constants";
-import { classifyCommandRisk } from "../engine/risk";
-import { redactText } from "../util/redact";
-import { appendMetricEvent } from "../metrics/events";
+} from "../workspace.js";
+import { readJson, writeJson } from "../util/json.js";
+import { runSpec } from "../engine/spawn.js";
+import { DEFAULT_RUNTIME_TIMEOUT_MS } from "../engine/constants.js";
+import { classifyCommandRisk } from "../engine/risk.js";
+import { redactText } from "../util/redact.js";
+import { appendMetricEvent } from "../metrics/events.js";
 
 export type CronJob = {
   id: string;

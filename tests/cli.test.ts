@@ -2,18 +2,18 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { captureConsole } from "../src/util/capture";
-import { dispatchCli, main } from "../src/cli";
-import { runCliCommand } from "../src/cli";
-import { clearDefaultsCache } from "../src/config";
-import { createPhaseSession } from "../src/phases/session";
-import { addCronJob } from "../src/cron/jobs";
+import { captureConsole } from "../src/util/capture.js";
+import { dispatchCli, main } from "../src/cli.js";
+import { runCliCommand } from "../src/cli.js";
+import { clearDefaultsCache } from "../src/config.js";
+import { createPhaseSession } from "../src/phases/session.js";
+import { addCronJob } from "../src/cron/jobs.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   loomStateRoot,
   setActiveWorkspace,
-} from "../src/workspace";
+} from "../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

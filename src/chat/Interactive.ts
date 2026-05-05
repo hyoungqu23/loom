@@ -1,9 +1,9 @@
 import * as React from "react";
 import { useApp, useInput } from "ink";
-import { ChatApp } from "./App";
-import { ChatState } from "./state";
-import { handleChatInput, ChatInputResult } from "./controller";
-import { Transcript, TranscriptMessage } from "./transcript";
+import { ChatApp } from "./App.js";
+import { ChatState } from "./state.js";
+import { handleChatInput, ChatInputResult } from "./controller.js";
+import { Transcript, TranscriptMessage } from "./transcript.js";
 
 const DEFAULT_DETAIL_PLACEHOLDER =
   "Synthesis will appear here after a phase run.";

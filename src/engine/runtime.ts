@@ -1,11 +1,11 @@
 import * as fs from "fs";
 import * as path from "path";
-import { RunOptions, RuntimeName, RuntimeResult } from "../types";
-import { ensureWorkspaceState } from "../workspace";
-import { writeJson } from "../util/json";
-import { buildRuntimeCommand } from "../runtimes";
-import { DEFAULT_RUNTIME_TIMEOUT_MS } from "./constants";
-import { runSpec } from "./spawn";
+import { RunOptions, RuntimeName, RuntimeResult } from "../types.js";
+import { ensureWorkspaceState } from "../workspace.js";
+import { writeJson } from "../util/json.js";
+import { buildRuntimeCommand } from "../runtimes/index.js";
+import { DEFAULT_RUNTIME_TIMEOUT_MS } from "./constants.js";
+import { runSpec } from "./spawn.js";
 
 function runtimeRunDir(runtime: RuntimeName): string {
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");

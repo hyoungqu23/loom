@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createFrameSink, createPlainSink } from "../../src/tui/sink";
-import { ESC } from "../../src/tui/ansi";
+import { createFrameSink, createPlainSink } from "../../src/tui/sink.js";
+import { ESC } from "../../src/tui/ansi.js";
 
 class MockWriter {
   chunks: string[] = [];

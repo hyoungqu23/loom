@@ -2,15 +2,15 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { runMemoryCommand } from "../../src/commands/memory";
-import { captureConsole } from "../../src/util/capture";
+import { runMemoryCommand } from "../../src/commands/memory.js";
+import { captureConsole } from "../../src/util/capture.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
-import { memoryRoot } from "../../src/memory/store";
-import { createPhaseSession, writeContext } from "../../src/phases/session";
+} from "../../src/workspace.js";
+import { memoryRoot } from "../../src/memory/store.js";
+import { createPhaseSession, writeContext } from "../../src/phases/session.js";
 
 let tmp: string;
 let originalWorkspace: string;

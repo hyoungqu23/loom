@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import { describe, expect, it } from "vitest";
-import { loadDefaults } from "../../src/config";
-import { getPackageRoot } from "../../src/workspace";
+import { loadDefaults } from "../../src/config.js";
+import { getPackageRoot } from "../../src/workspace.js";
 
 const promptsDir = path.join(getPackageRoot(), "harness", "prompts");
 const contractsDir = path.join(getPackageRoot(), "harness", "contracts");

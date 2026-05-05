@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createDrawSurface } from "../../src/tui/draw";
-import { ESC } from "../../src/tui/ansi";
+import { createDrawSurface } from "../../src/tui/draw.js";
+import { ESC } from "../../src/tui/ansi.js";
 
 class MockWriter {
   chunks: string[] = [];

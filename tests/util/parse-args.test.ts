@@ -4,7 +4,7 @@ import {
   flagNumber,
   flagString,
   parseArgs,
-} from "../../src/util/parse-args";
+} from "../../src/util/parse-args.js";
 
 describe("parseArgs", () => {
   it("returns empty positionals and flags for empty argv", () => {

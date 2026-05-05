@@ -7,13 +7,13 @@ import {
   openPlan,
   openSynthesis,
   openWorkersIndex,
-} from "../../src/chat/files";
-import { createPhaseSession } from "../../src/phases/session";
+} from "../../src/chat/files.js";
+import { createPhaseSession } from "../../src/phases/session.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

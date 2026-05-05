@@ -14,7 +14,7 @@ import {
   setActiveWorkspace,
   workspaceConfigPath,
   workspaceRoot,
-} from "../src/workspace";
+} from "../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

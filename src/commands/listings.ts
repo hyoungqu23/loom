@@ -1,6 +1,6 @@
-import { loadDefaults } from "../config";
-import { installedSkills } from "../agents/skills";
-import { summarizeSkillReview } from "../metrics/events";
+import { loadDefaults } from "../config.js";
+import { installedSkills } from "../agents/skills.js";
+import { summarizeSkillReview } from "../metrics/events.js";
 
 export function printAgents(): void {
   const defaults = loadDefaults();

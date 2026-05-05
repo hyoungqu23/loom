@@ -1,13 +1,13 @@
-import { Flags } from "../types";
-import { loadDefaults } from "../config";
-import { commandExists } from "../util/shell";
-import { runtimeVersion } from "../runtimes";
-import { runtimeCapabilityRows } from "../runtimes/capabilities";
-import { runRuntime } from "../engine";
-import { workspaceRoot } from "../workspace";
-import { flagBool, flagNumber, flagString } from "../util/parse-args";
-import { createAnsi } from "../tui/ansi";
-import { detectColorMode } from "../tui/isTty";
+import { Flags } from "../types.js";
+import { loadDefaults } from "../config.js";
+import { commandExists } from "../util/shell.js";
+import { runtimeVersion } from "../runtimes/index.js";
+import { runtimeCapabilityRows } from "../runtimes/capabilities.js";
+import { runRuntime } from "../engine/index.js";
+import { workspaceRoot } from "../workspace.js";
+import { flagBool, flagNumber, flagString } from "../util/parse-args.js";
+import { createAnsi } from "../tui/ansi.js";
+import { detectColorMode } from "../tui/isTty.js";
 
 function smokePrompt(runtime: string): string {
   return `Return exactly: LOOM_WORKER_OK_${runtime.toUpperCase()}`;

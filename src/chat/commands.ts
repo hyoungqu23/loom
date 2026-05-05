@@ -1,4 +1,4 @@
-import { GateDecision, LoomPhase, LOOM_PHASES } from "../types";
+import { GateDecision, LoomPhase, LOOM_PHASES } from "../types.js";
 
 const PHASE_SET = new Set<string>(LOOM_PHASES);
 const GATE_SET = new Set<string>(["proceed", "revise", "abort"]);

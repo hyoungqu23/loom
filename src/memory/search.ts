@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { listPhaseSessions, loadContext, loadPlan } from "../phases/session";
+import { listPhaseSessions, loadContext, loadPlan } from "../phases/session.js";
 
 export type SessionSearchResult = {
   feature: string;

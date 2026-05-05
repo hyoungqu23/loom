@@ -1,4 +1,4 @@
-import type { LoomPhase } from "../types";
+import type { LoomPhase } from "../types.js";
 
 /**
  * State carried across iterations of a `/autopilot` chat session.

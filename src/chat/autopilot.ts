@@ -1,4 +1,4 @@
-import { LoomPhase, LOOM_PHASES } from "../types";
+import { LoomPhase, LOOM_PHASES } from "../types.js";
 
 /**
  * Default last phase the chat autopilot loop runs before stopping after a

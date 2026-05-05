@@ -1,9 +1,9 @@
 import * as fs from "fs";
 import * as path from "path";
-import { loadState, resolvePhaseSession } from "../phases/session";
-import { loadMetricEvents, MetricEvent } from "../metrics/events";
-import { PhaseState } from "../types";
-import { redactText, redactValue } from "../util/redact";
+import { loadState, resolvePhaseSession } from "../phases/session.js";
+import { loadMetricEvents, MetricEvent } from "../metrics/events.js";
+import { PhaseState } from "../types.js";
+import { redactText, redactValue } from "../util/redact.js";
 
 export type TrajectoryExport = {
   feature: string;

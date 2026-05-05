@@ -2,18 +2,18 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { searchFeatureSessions } from "../../src/memory/search";
+import { searchFeatureSessions } from "../../src/memory/search.js";
 import {
   appendWorkerOutput,
   createPhaseSession,
   writeContext,
   writePlan,
-} from "../../src/phases/session";
+} from "../../src/phases/session.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
-import { getPackageRoot } from "../../src/workspace";
+import { getPackageRoot } from "../../src/workspace.js";
 import {
   parseStartPhaseRules,
   loadStartPhaseRules,
   inferStartPhase,
   BUILTIN_START_PHASE_RULES,
-} from "../../src/phases/start-phase";
-import { LoomPhase, PhaseHandoff } from "../../src/types";
+} from "../../src/phases/start-phase.js";
+import { LoomPhase, PhaseHandoff } from "../../src/types.js";
 
 const RULES_FILE = path.join(getPackageRoot(), "harness", "start-phase.md");
 

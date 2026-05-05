@@ -1,10 +1,10 @@
 import * as path from "path";
-import { InteractiveChat } from "./Interactive";
-import { loadInkModules, InkModules } from "./ink";
-import { createInitialChatState } from "./state";
-import { resolveChatSession } from "./session";
-import { loadState } from "../phases/session";
-import { TranscriptMessage } from "./transcript";
+import { InteractiveChat } from "./Interactive.js";
+import { loadInkModules, InkModules } from "./ink.js";
+import { createInitialChatState } from "./state.js";
+import { resolveChatSession } from "./session.js";
+import { loadState } from "../phases/session.js";
+import { TranscriptMessage } from "./transcript.js";
 
 export type StartChatOptions = {
   feature?: string;

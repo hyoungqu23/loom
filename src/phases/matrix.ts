@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
-import { LoomPhase, LOOM_PHASES } from "../types";
-import { getPackageRoot } from "../workspace";
-import { parseMarkdownTable } from "../util/markdown-table";
+import { LoomPhase, LOOM_PHASES } from "../types.js";
+import { getPackageRoot } from "../workspace.js";
+import { parseMarkdownTable } from "../util/markdown-table.js";
 
 export type PhaseMatrixRule = {
   phase: LoomPhase;

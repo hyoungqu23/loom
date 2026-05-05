@@ -4,12 +4,12 @@ import {
   LoomPhase,
   LOOM_PHASES,
   PhaseHandoff,
-} from "../types";
-import { getPackageRoot } from "../workspace";
+} from "../types.js";
+import { getPackageRoot } from "../workspace.js";
 import {
   compileRegexLiteral,
   parseMarkdownTable,
-} from "../util/markdown-table";
+} from "../util/markdown-table.js";
 
 export type StartPhaseRule = {
   regex: RegExp;

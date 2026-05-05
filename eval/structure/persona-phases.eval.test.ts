@@ -1,10 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
 import { describe, expect, it } from "vitest";
-import { loadDefaults } from "../../src/config";
-import { LOOM_PHASES, LoomPhase } from "../../src/types";
-import { loadPhaseMatrix } from "../../src/phases/matrix";
-import { getPackageRoot } from "../../src/workspace";
+import { loadDefaults } from "../../src/config.js";
+import { LOOM_PHASES, LoomPhase } from "../../src/types.js";
+import { loadPhaseMatrix } from "../../src/phases/matrix.js";
+import { getPackageRoot } from "../../src/workspace.js";
 
 const VALID_PHASES = new Set<string>(LOOM_PHASES);
 

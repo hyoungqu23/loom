@@ -6,8 +6,8 @@
  */
 
 import * as readline from "readline";
-import type { GateDecision, LoomPhase } from "../types";
-import { createAnsi, type ColorMode } from "./ansi";
+import type { GateDecision, LoomPhase } from "../types.js";
+import { createAnsi, type ColorMode } from "./ansi.js";
 
 export type GateContext = {
   phase: LoomPhase;

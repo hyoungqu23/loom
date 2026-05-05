@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   compileRegexLiteral,
   parseMarkdownTable,
-} from "../../src/util/markdown-table";
+} from "../../src/util/markdown-table.js";
 
 describe("parseMarkdownTable", () => {
   it("returns [] for empty markdown", () => {

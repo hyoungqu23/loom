@@ -1,4 +1,4 @@
-import { runCliCommand } from "../cli";
+import { runCliCommand } from "../cli.js";
 
 export type GatewayInput = {
   text: string;

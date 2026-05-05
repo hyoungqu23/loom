@@ -7,12 +7,12 @@ import {
   loadMetricEvents,
   metricsEventsPath,
   summarizeMetrics,
-} from "../../src/metrics/events";
+} from "../../src/metrics/events.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

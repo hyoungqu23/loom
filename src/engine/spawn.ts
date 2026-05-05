@@ -1,6 +1,6 @@
 import { spawn } from "child_process";
-import { RuntimeResult, RuntimeSpec, WorkerStream } from "../types";
-import { KILL_GRACE_MS } from "./constants";
+import { RuntimeResult, RuntimeSpec, WorkerStream } from "../types.js";
+import { KILL_GRACE_MS } from "./constants.js";
 
 export type SpawnHooks = {
   /** Streaming callback for stdout/stderr chunks (decoded as utf8). */

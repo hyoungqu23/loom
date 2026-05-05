@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { claudeAdapter } from "../../src/runtimes/claude";
-import { RuntimeConfig, RunOptions } from "../../src/types";
+import { claudeAdapter } from "../../src/runtimes/claude.js";
+import { RuntimeConfig, RunOptions } from "../../src/types.js";
 
 const baseConfig = (overrides: Partial<RuntimeConfig> = {}): RuntimeConfig => ({
   command: "claude",

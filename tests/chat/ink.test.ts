@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loadInkModules } from "../../src/chat/ink";
+import { loadInkModules } from "../../src/chat/ink.js";
 
 describe("chat/ink", () => {
   it("loads Ink and React through the compatibility wrapper", async () => {

@@ -6,12 +6,12 @@ import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 import {
   ensureMemoryStore,
   loadMemoryFile,
   memoryRoot,
-} from "../../src/memory/store";
+} from "../../src/memory/store.js";
 
 let tmp: string;
 let originalWorkspace: string;

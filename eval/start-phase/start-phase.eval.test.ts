@@ -6,9 +6,9 @@ import {
   inferStartPhase,
   loadStartPhaseRules,
   parseStartPhaseRules,
-} from "../../src/phases/start-phase";
-import { LoomPhase, PhaseHandoff, PhasePlan, SessionContext } from "../../src/types";
-import { getPackageRoot } from "../../src/workspace";
+} from "../../src/phases/start-phase.js";
+import { LoomPhase, PhaseHandoff, PhasePlan, SessionContext } from "../../src/types.js";
+import { getPackageRoot } from "../../src/workspace.js";
 
 type SessionState = "none" | "empty" | "context" | "planned";
 

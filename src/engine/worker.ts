@@ -6,16 +6,16 @@ import {
   RunOptions,
   TeamHooks,
   WorkerResult,
-} from "../types";
-import { loadAgent } from "../agents/load";
-import { withRolePrompt, WithRolePromptOptions } from "../agents/prompt";
-import { selectedSkillNames } from "../agents/skills";
-import { buildRuntimeCommand } from "../runtimes";
-import { writeJson } from "../util/json";
-import { flagNumber, flagString } from "../util/parse-args";
-import { DEFAULT_RUNTIME_TIMEOUT_MS } from "./constants";
-import { runSpec } from "./spawn";
-import { classifyCommandRisk } from "./risk";
+} from "../types.js";
+import { loadAgent } from "../agents/load.js";
+import { withRolePrompt, WithRolePromptOptions } from "../agents/prompt.js";
+import { selectedSkillNames } from "../agents/skills.js";
+import { buildRuntimeCommand } from "../runtimes/index.js";
+import { writeJson } from "../util/json.js";
+import { flagNumber, flagString } from "../util/parse-args.js";
+import { DEFAULT_RUNTIME_TIMEOUT_MS } from "./constants.js";
+import { runSpec } from "./spawn.js";
+import { classifyCommandRisk } from "./risk.js";
 
 /**
  * Resolve a run plan for one agent (prompt + spawn spec).

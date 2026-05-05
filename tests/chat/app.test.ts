@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import * as React from "react";
 import { render } from "ink-testing-library";
-import { createInitialChatState } from "../../src/chat/state";
-import { ChatApp } from "../../src/chat/App";
+import { createInitialChatState } from "../../src/chat/state.js";
+import { ChatApp } from "../../src/chat/App.js";
 
 describe("chat/App", () => {
   it("renders the chat workspace header, transcript, detail, and footer", () => {

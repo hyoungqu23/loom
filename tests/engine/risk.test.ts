@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyCommandRisk } from "../../src/engine/risk";
+import { classifyCommandRisk } from "../../src/engine/risk.js";
 
 describe("classifyCommandRisk", () => {
   it("marks common read-only commands as safe", () => {

@@ -2,8 +2,8 @@ import {
   GateDecision,
   LoomPhase,
   PhaseGateRecord,
-} from "../types";
-import { loadState, writeState } from "./session";
+} from "../types.js";
+import { loadState, writeState } from "./session.js";
 
 export type RecordPhaseGateInput = {
   decision: GateDecision;

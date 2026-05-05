@@ -2,14 +2,14 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { captureConsole } from "../../src/util/capture";
-import { initWorkspace } from "../../src/commands/init";
+import { captureConsole } from "../../src/util/capture.js";
+import { initWorkspace } from "../../src/commands/init.js";
 import {
   getActiveWorkspace,
   loomStateRoot,
   setActiveWorkspace,
   workspaceRoot,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

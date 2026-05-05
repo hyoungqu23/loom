@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { LoomPhase, WorkerResult } from "../types";
+import { LoomPhase, WorkerResult } from "../types.js";
 
 /**
  * The detail panel surfaces *one* phase's outcome at a time. Synthesis

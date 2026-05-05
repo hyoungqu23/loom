@@ -1,5 +1,5 @@
-import { AgentConfig } from "../types";
-import { loadDefaults } from "../config";
+import { AgentConfig } from "../types.js";
+import { loadDefaults } from "../config.js";
 
 export function loadAgent(agentName: string): AgentConfig {
   const defaults = loadDefaults();

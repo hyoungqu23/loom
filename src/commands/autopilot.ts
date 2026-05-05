@@ -4,18 +4,18 @@ import {
   GateDecision,
   LoomPhase,
   LOOM_PHASES,
-} from "../types";
-import { flagBool, flagString } from "../util/parse-args";
+} from "../types.js";
+import { flagBool, flagString } from "../util/parse-args.js";
 import {
   buildHandoff,
   createPhaseSession,
   resolvePhaseSession,
-} from "../phases/session";
-import { runPhase } from "../phases/runner";
-import { recordPhaseGate } from "../phases/gate";
-import { inferStartPhase } from "../phases/start-phase";
-import { createGateProvider, createRenderer, type FrameDriver } from "../tui";
-import { detectColorMode, detectFrameEnabled } from "../tui/isTty";
+} from "../phases/session.js";
+import { runPhase } from "../phases/runner.js";
+import { recordPhaseGate } from "../phases/gate.js";
+import { inferStartPhase } from "../phases/start-phase.js";
+import { createGateProvider, createRenderer, type FrameDriver } from "../tui/index.js";
+import { detectColorMode, detectFrameEnabled } from "../tui/isTty.js";
 
 const PHASE_SET = new Set<string>(LOOM_PHASES);
 

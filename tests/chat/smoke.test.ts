@@ -2,24 +2,24 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { saveWorkspaceConfig, clearDefaultsCache } from "../../src/config";
-import { handleChatInput } from "../../src/chat/controller";
+import { saveWorkspaceConfig, clearDefaultsCache } from "../../src/config.js";
+import { handleChatInput } from "../../src/chat/controller.js";
 import {
   ChatState,
   chatReducer,
   createInitialChatState,
-} from "../../src/chat/state";
-import { Transcript } from "../../src/chat/transcript";
+} from "../../src/chat/state.js";
+import { Transcript } from "../../src/chat/transcript.js";
 import {
   createPhaseSession,
   loadState,
-} from "../../src/phases/session";
+} from "../../src/phases/session.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
-import { captureConsole } from "../../src/util/capture";
+} from "../../src/workspace.js";
+import { captureConsole } from "../../src/util/capture.js";
 
 let tmp: string;
 let originalWorkspace: string;

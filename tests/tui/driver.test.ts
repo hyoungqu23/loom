@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createFrameDriver } from "../../src/tui/driver";
+import { createFrameDriver } from "../../src/tui/driver.js";
 
 class MockWriter {
   chunks: string[] = [];

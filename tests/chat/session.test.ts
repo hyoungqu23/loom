@@ -6,13 +6,13 @@ import {
   createPhaseSession,
   loadState,
   resolvePhaseSession,
-} from "../../src/phases/session";
-import { serializeState } from "../../src/phases/serialize";
-import { getActiveWorkspace, setActiveWorkspace } from "../../src/workspace";
+} from "../../src/phases/session.js";
+import { serializeState } from "../../src/phases/serialize.js";
+import { getActiveWorkspace, setActiveWorkspace } from "../../src/workspace.js";
 import {
   mostRecentChatSession,
   resolveChatSession,
-} from "../../src/chat/session";
+} from "../../src/chat/session.js";
 
 let tmp: string;
 let originalWorkspace: string;

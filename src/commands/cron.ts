@@ -1,6 +1,6 @@
-import { Flags } from "../types";
-import { listCronJobs, runCronJob } from "../cron/jobs";
-import { redactText } from "../util/redact";
+import { Flags } from "../types.js";
+import { listCronJobs, runCronJob } from "../cron/jobs.js";
+import { redactText } from "../util/redact.js";
 
 export async function runCronCommand(positionals: string[], _flags: Flags): Promise<void> {
   const subcommand = positionals[0] || "list";

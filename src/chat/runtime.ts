@@ -1,19 +1,19 @@
-import { ChatCommand } from "./commands";
-import { ChatState, chatReducer, renderChatStatus } from "./state";
-import { runPhase, PhaseRunResult } from "../phases/runner";
-import { recordPhaseGate } from "../phases/gate";
-import { AgentRun, GateDecision, LoomPhase, WorkerResult } from "../types";
+import { ChatCommand } from "./commands.js";
+import { ChatState, chatReducer, renderChatStatus } from "./state.js";
+import { runPhase, PhaseRunResult } from "../phases/runner.js";
+import { recordPhaseGate } from "../phases/gate.js";
+import { AgentRun, GateDecision, LoomPhase, WorkerResult } from "../types.js";
 import {
   DEFAULT_AUTOPILOT_END_PHASE,
   isAutopilotEnd,
   nextLoomPhase,
-} from "./autopilot";
+} from "./autopilot.js";
 import {
   openContext,
   openPlan,
   openSynthesis,
   openWorkersIndex,
-} from "./files";
+} from "./files.js";
 
 export type ChatRuntimeMessage =
   | { type: "run-start"; text: string }

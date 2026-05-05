@@ -1,7 +1,11 @@
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
 
-const PACKAGE_ROOT = path.resolve(__dirname, "..");
+const PACKAGE_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 
 let activeWorkspace: string = process.cwd();
 

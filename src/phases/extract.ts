@@ -14,7 +14,7 @@
  *   independent alias maps per extractor.
  */
 
-import { PhasePlan, SessionContext } from "../types";
+import { PhasePlan, SessionContext } from "../types.js";
 
 export type ExtractedContext = Partial<SessionContext>;
 export type ExtractedPlan = Partial<PhasePlan>;

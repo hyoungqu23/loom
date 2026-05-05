@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
-import { AgentConfig, InstalledSkill, SkillMetadata } from "../types";
-import { getPackageRoot } from "../workspace";
-import { workspaceRoot } from "../workspace";
+import { AgentConfig, InstalledSkill, SkillMetadata } from "../types.js";
+import { getPackageRoot } from "../workspace.js";
+import { workspaceRoot } from "../workspace.js";
 
 const SKILLS_DIR_REL = path.join(".agents", "skills");
 

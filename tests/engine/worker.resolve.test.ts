@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { resolveAgentRun } from "../../src/engine/worker";
-import { clearDefaultsCache } from "../../src/config";
+import { resolveAgentRun } from "../../src/engine/worker.js";
+import { clearDefaultsCache } from "../../src/config.js";
 import {
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 let originalWorkspace: string;
 

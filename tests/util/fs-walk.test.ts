@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   collectMarkdownFiles,
   walkFiles,
-} from "../../src/util/fs-walk";
+} from "../../src/util/fs-walk.js";
 
 let tmp: string;
 

@@ -4,8 +4,8 @@ import { render } from "ink-testing-library";
 import {
   dispatchChatKey,
   InteractiveChat,
-} from "../../src/chat/Interactive";
-import { createInitialChatState } from "../../src/chat/state";
+} from "../../src/chat/Interactive.js";
+import { createInitialChatState } from "../../src/chat/state.js";
 
 function makeDeps() {
   return {

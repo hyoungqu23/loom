@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { ensureWorkspaceState } from "../workspace";
+import { ensureWorkspaceState } from "../workspace.js";
 
 export type MemoryKind = "user" | "project" | "procedure";
 export type MemoryConfidence = "low" | "medium" | "high";

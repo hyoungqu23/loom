@@ -9,7 +9,7 @@ import {
   mergeContext,
   mergePlan,
   extractMemoryCandidatesFromReflectOutput,
-} from "../../src/phases/extract";
+} from "../../src/phases/extract.js";
 
 describe("extractContextFromOutput", () => {
   it("returns an empty delta for empty input", () => {

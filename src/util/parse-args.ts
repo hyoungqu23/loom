@@ -1,4 +1,4 @@
-import { FlagValue, ParsedArgs } from "../types";
+import { FlagValue, ParsedArgs } from "../types.js";
 
 /**
  * Flags that never take a value. They become boolean true when present and

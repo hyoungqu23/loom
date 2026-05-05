@@ -3,7 +3,7 @@ import {
   createInitialChatState,
   chatReducer,
   renderChatStatus,
-} from "../../src/chat/state";
+} from "../../src/chat/state.js";
 
 describe("chat/state", () => {
   it("starts with primary-personas-only and synthesis enabled", () => {

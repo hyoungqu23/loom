@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectColorMode, detectFrameEnabled } from "../../src/tui/isTty";
+import { detectColorMode, detectFrameEnabled } from "../../src/tui/isTty.js";
 
 const env = (
   overrides: Record<string, string | undefined> = {},

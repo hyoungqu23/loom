@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { startChat } from "../../src/chat/start";
-import { createPhaseSession } from "../../src/phases/session";
-import { getActiveWorkspace, setActiveWorkspace } from "../../src/workspace";
+import { startChat } from "../../src/chat/start.js";
+import { createPhaseSession } from "../../src/phases/session.js";
+import { getActiveWorkspace, setActiveWorkspace } from "../../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

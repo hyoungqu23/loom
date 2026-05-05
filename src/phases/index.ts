@@ -5,13 +5,13 @@ export {
   parseContext,
   serializePlan,
   parsePlan,
-} from "./serialize";
+} from "./serialize.js";
 
 export {
   runPhase,
   type PhaseRunOptions,
   type PhaseRunResult,
-} from "./runner";
+} from "./runner.js";
 
 export {
   parseStartPhaseRules,
@@ -20,7 +20,7 @@ export {
   BUILTIN_START_PHASE_RULES,
   type StartPhaseRule,
   type StartPhaseDecision,
-} from "./start-phase";
+} from "./start-phase.js";
 
 export {
   parsePhaseMatrix,
@@ -29,7 +29,7 @@ export {
   primaryPersonaForPhase,
   BUILTIN_PHASE_MATRIX,
   type PhaseMatrixRule,
-} from "./matrix";
+} from "./matrix.js";
 
 export {
   featuresRoot,
@@ -45,4 +45,4 @@ export {
   listPhaseSessions,
   resolvePhaseSession,
   buildHandoff,
-} from "./session";
+} from "./session.js";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { COMMON_RUNTIME_ENV, filterEnv } from "../../src/runtimes/env";
-import { buildRuntimeCommand } from "../../src/runtimes";
+import { COMMON_RUNTIME_ENV, filterEnv } from "../../src/runtimes/env.js";
+import { buildRuntimeCommand } from "../../src/runtimes/index.js";
 
 describe("filterEnv", () => {
   it("keeps common system env vars without an explicit allowlist", () => {

@@ -1,22 +1,22 @@
 import * as fs from "fs";
-import { Flags } from "../types";
+import { Flags } from "../types.js";
 import {
   loadDefaults,
   loadWorkspaceConfig,
   saveWorkspaceConfig,
-} from "../config";
+} from "../config.js";
 import {
   ensureWorkspaceState,
   workspaceConfigPath,
-} from "../workspace";
+} from "../workspace.js";
 import {
   getNestedValue,
   normalizeConfigPath,
   parseConfigValue,
   setNestedValue,
   JsonObject,
-} from "../util/values";
-import { flagBool } from "../util/parse-args";
+} from "../util/values.js";
+import { flagBool } from "../util/parse-args.js";
 
 function printConfigHelp(): void {
   console.log(`loom config

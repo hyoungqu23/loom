@@ -3,7 +3,7 @@ import {
   redactText,
   redactValue,
   workerOutputRedactionEnabled,
-} from "../../src/util/redact";
+} from "../../src/util/redact.js";
 
 describe("redactText", () => {
   it("redacts env-style secret assignments", () => {

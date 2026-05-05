@@ -1,16 +1,16 @@
 import * as fs from "fs";
 import * as path from "path";
 import { describe, expect, it } from "vitest";
-import { loadDefaults } from "../../src/config";
-import { loadPhaseMatrix } from "../../src/phases/matrix";
+import { loadDefaults } from "../../src/config.js";
+import { loadPhaseMatrix } from "../../src/phases/matrix.js";
 import {
   extractContextFromOutput,
   extractPlanFromOutput,
   isContextDeltaEmpty,
   isPlanDeltaEmpty,
-} from "../../src/phases/extract";
-import { LoomPhase } from "../../src/types";
-import { getPackageRoot } from "../../src/workspace";
+} from "../../src/phases/extract.js";
+import { LoomPhase } from "../../src/types.js";
+import { getPackageRoot } from "../../src/workspace.js";
 
 const defaults = loadDefaults();
 

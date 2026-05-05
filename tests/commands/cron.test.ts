@@ -2,14 +2,14 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { runCronCommand } from "../../src/commands/cron";
-import { addCronJob } from "../../src/cron/jobs";
-import { captureConsole } from "../../src/util/capture";
+import { runCronCommand } from "../../src/commands/cron.js";
+import { addCronJob } from "../../src/cron/jobs.js";
+import { captureConsole } from "../../src/util/capture.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;

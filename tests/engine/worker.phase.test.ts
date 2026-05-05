@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { resolveAgentRun } from "../../src/engine/worker";
-import { clearDefaultsCache } from "../../src/config";
-import { getActiveWorkspace, setActiveWorkspace } from "../../src/workspace";
-import { PhaseHandoff } from "../../src/types";
+import { resolveAgentRun } from "../../src/engine/worker.js";
+import { clearDefaultsCache } from "../../src/config.js";
+import { getActiveWorkspace, setActiveWorkspace } from "../../src/workspace.js";
+import { PhaseHandoff } from "../../src/types.js";
 
 let originalWorkspace: string;
 

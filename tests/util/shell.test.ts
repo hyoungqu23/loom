@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   clearCommandCheckCache,
   commandExists,
-} from "../../src/util/shell";
+} from "../../src/util/shell.js";
 
 afterEach(() => {
   clearCommandCheckCache();

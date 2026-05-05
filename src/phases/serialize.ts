@@ -5,7 +5,7 @@ import {
   PhasePlan,
   PhaseState,
   SessionContext,
-} from "../types";
+} from "../types.js";
 
 const PHASE_SET = new Set<string>(LOOM_PHASES);
 

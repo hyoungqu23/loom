@@ -2,6 +2,7 @@
   "name": "loom",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Multi-runtime agent harness for Codex CLI, Claude Code, Gemini CLI, and local agents.",
   "bin": {
     "loom": "bin/loom.js"
@@ -16,7 +17,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
-    "ink-testing-library": "^2.1.0",
+    "@types/react": "^19.2.0",
+    "ink-testing-library": "^4.0.0",
     "typescript": "^5.8.0",
     "vitest": "^4.1.5"
   },
@@ -25,8 +27,8 @@
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "@types/react": "^17.0.83",
-    "ink": "^3.2.0",
-    "react": "^17.0.2"
+    "ink": "^7.0.1",
+    "react": "^19.2.0",
+    "react-devtools-core": "^6.1.2"
   }
 }

@@ -15,7 +15,7 @@
  *   for not corrupting scrollback.
  */
 
-import { ESC } from "./ansi";
+import { ESC } from "./ansi.js";
 
 export type DrawSurface = {
   render(lines: string[]): void;

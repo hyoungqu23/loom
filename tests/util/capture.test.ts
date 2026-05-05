@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { captureConsole } from "../../src/util/capture";
+import { captureConsole } from "../../src/util/capture.js";
 
 describe("captureConsole", () => {
   it("returns the value produced by the wrapped function", async () => {

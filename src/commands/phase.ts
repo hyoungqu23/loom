@@ -3,14 +3,14 @@ import {
   GateDecision,
   LoomPhase,
   LOOM_PHASES,
-} from "../types";
-import { flagBool, flagString } from "../util/parse-args";
+} from "../types.js";
+import { flagBool, flagString } from "../util/parse-args.js";
 import {
   createPhaseSession,
   resolvePhaseSession,
-} from "../phases/session";
-import { runPhase } from "../phases/runner";
-import { recordPhaseGate } from "../phases/gate";
+} from "../phases/session.js";
+import { runPhase } from "../phases/runner.js";
+import { recordPhaseGate } from "../phases/gate.js";
 
 const PHASE_SET = new Set<string>(LOOM_PHASES);
 const GATE_SET = new Set<GateDecision>(["proceed", "revise", "abort"]);

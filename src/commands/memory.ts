@@ -1,12 +1,12 @@
-import { Flags } from "../types";
-import { flagString } from "../util/parse-args";
+import { Flags } from "../types.js";
+import { flagString } from "../util/parse-args.js";
 import {
   listMemoryCandidates,
   MemoryKind,
   promoteMemoryCandidate,
   rejectMemoryCandidate,
-} from "../memory/store";
-import { searchFeatureSessions } from "../memory/search";
+} from "../memory/store.js";
+import { searchFeatureSessions } from "../memory/search.js";
 
 function ensureMemoryKind(value: string): MemoryKind {
   if (value === "user" || value === "project" || value === "procedure") {

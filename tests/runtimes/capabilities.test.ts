@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runtimeCapability, runtimeCapabilityRows } from "../../src/runtimes/capabilities";
+import { runtimeCapability, runtimeCapabilityRows } from "../../src/runtimes/capabilities.js";
 
 describe("runtime capabilities", () => {
   it("describes known runtime support", () => {

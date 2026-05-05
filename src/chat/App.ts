@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Box, Text } from "ink";
-import { ChatState } from "./state";
+import { ChatState } from "./state.js";
 
 export type ChatAppMessage = {
   type: string;

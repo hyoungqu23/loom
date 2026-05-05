@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createAnsi, ESC } from "../../src/tui/ansi";
+import { createAnsi, ESC } from "../../src/tui/ansi.js";
 
 describe("createAnsi(mode='ansi')", () => {
   const a = createAnsi("ansi");

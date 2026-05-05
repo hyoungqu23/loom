@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { ensureWorkspaceState } from "../workspace";
+import { ensureWorkspaceState } from "../workspace.js";
 import {
   LoomPhase,
   LOOM_PHASES,
@@ -8,7 +8,7 @@ import {
   PhasePlan,
   PhaseState,
   SessionContext,
-} from "../types";
+} from "../types.js";
 import {
   parseContext,
   parsePlan,
@@ -16,8 +16,8 @@ import {
   serializeContext,
   serializePlan,
   serializeState,
-} from "./serialize";
-import { redactText, workerOutputRedactionEnabled } from "../util/redact";
+} from "./serialize.js";
+import { redactText, workerOutputRedactionEnabled } from "../util/redact.js";
 
 const STATE_FILE = "STATE.md";
 const CONTEXT_FILE = "CONTEXT.md";

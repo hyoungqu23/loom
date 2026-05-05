@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { captureConsole } from "../../src/util/capture";
-import { printHelp } from "../../src/commands/help";
+import { captureConsole } from "../../src/util/capture.js";
+import { printHelp } from "../../src/commands/help.js";
 
 describe("printHelp", () => {
   it("prints a usage block mentioning the loom command", async () => {

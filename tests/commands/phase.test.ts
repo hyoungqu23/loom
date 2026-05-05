@@ -2,20 +2,20 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { captureConsole } from "../../src/util/capture";
-import { runPhaseCommand } from "../../src/commands/phase";
+import { captureConsole } from "../../src/util/capture.js";
+import { runPhaseCommand } from "../../src/commands/phase.js";
 import {
   createPhaseSession,
   loadState,
   resolvePhaseSession,
-} from "../../src/phases/session";
-import { LoomPhase } from "../../src/types";
-import { clearDefaultsCache, saveWorkspaceConfig } from "../../src/config";
+} from "../../src/phases/session.js";
+import { LoomPhase } from "../../src/types.js";
+import { clearDefaultsCache, saveWorkspaceConfig } from "../../src/config.js";
 import {
   ensureWorkspaceState,
   getActiveWorkspace,
   setActiveWorkspace,
-} from "../../src/workspace";
+} from "../../src/workspace.js";
 
 let tmp: string;
 let originalWorkspace: string;
