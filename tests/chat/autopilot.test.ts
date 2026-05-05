@@ -189,10 +189,7 @@ describe("chat/autopilot loop", () => {
     });
 
     expect(abortResult?.state.autopilot).toBe(null);
-    expect(abortResult?.state.run).toEqual({
-      status: "waiting-for-gate",
-      phase: "discuss",
-    });
+    expect(abortResult?.state.run).toEqual({ status: "idle" });
     const messageTypes = abortResult?.messages.map((m) => m.type) ?? [];
     expect(messageTypes).toContain("gate-recorded");
     expect(messageTypes).toContain("autopilot-stop");
@@ -287,6 +284,7 @@ describe("chat/autopilot loop", () => {
     // /gate proceed at the configured end phase stops the loop
     // immediately instead of advancing into review.
     expect(proceedResult?.state.autopilot).toBe(null);
+    expect(proceedResult?.state.run).toEqual({ status: "idle" });
     const stop = proceedResult?.messages.find(
       (m) => m.type === "autopilot-stop",
     );
@@ -324,6 +322,7 @@ describe("chat/autopilot loop", () => {
     });
 
     expect(proceedResult?.state.autopilot).toBe(null);
+    expect(proceedResult?.state.run).toEqual({ status: "idle" });
     const stop = proceedResult?.messages.find(
       (m) => m.type === "autopilot-stop",
     );

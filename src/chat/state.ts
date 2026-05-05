@@ -110,7 +110,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         autopilot: { task: action.task, endPhase: action.endPhase },
       };
     case "autopilot-stop":
-      return { ...state, autopilot: null };
+      return { ...state, run: { status: "idle" }, autopilot: null };
     case "refresh":
       return {
         ...state,
