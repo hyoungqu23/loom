@@ -96,6 +96,34 @@ describe("chat/controller", () => {
     expect(result?.transcript[2].text).toContain("phase finished: discuss");
   });
 
+  it("dumps the error stack to stderr when LOOM_DEBUG=1", async () => {
+    const sessionDir = createPhaseSession("controller debug");
+    const validSnapshot = snap(sessionDir, "controller-debug");
+    const brokenSnapshot: ChatSnapshot = {
+      ...validSnapshot,
+      state: { ...validSnapshot.state, sessionDir: "/nonexistent/loom-debug" },
+    };
+
+    const original = process.env.LOOM_DEBUG;
+    process.env.LOOM_DEBUG = "1";
+    const stderr: string[] = [];
+    try {
+      await captureConsole(stderr, async () => {
+        await handleChatInput(brokenSnapshot, "/gate proceed");
+      });
+    } finally {
+      if (original === undefined) {
+        delete process.env.LOOM_DEBUG;
+      } else {
+        process.env.LOOM_DEBUG = original;
+      }
+    }
+
+    const dumped = stderr.join("\n");
+    expect(dumped).toContain("[loom-debug] chat command threw:");
+    expect(dumped).toMatch(/at /); // a stack frame line
+  });
+
   it("converts thrown runtime errors into transcript error messages without losing state", async () => {
     const sessionDir = createPhaseSession("controller error");
     const validSnapshot = snap(sessionDir, "controller-error");

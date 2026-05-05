@@ -59,6 +59,19 @@ export async function handleChatInput(
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    // The transcript only ever shows the message — stack traces would
+    // dwarf the chat. Stack lands on stderr when LOOM_DEBUG=1 so an
+    // operator who hits a non-obvious error has a way to inspect it
+    // without scrolling through Ink's frame.
+    if (
+      process.env.LOOM_DEBUG === "1" &&
+      error instanceof Error &&
+      error.stack
+    ) {
+      process.stderr.write(
+        `\n[loom-debug] chat command threw:\n${error.stack}\n`,
+      );
+    }
     const errored: TranscriptMessage = {
       type: "error",
       text: `chat error: ${message}`,
