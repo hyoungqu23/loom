@@ -408,17 +408,16 @@ export async function executeChatCommand(
   }
 
   if (command.type === "personas") {
+    const text =
+      command.personas.length === 0
+        ? "personas reset; future runs will use the phase matrix defaults"
+        : `personas set: ${command.personas.join(", ")}`;
     return {
       state: chatReducer(state, {
         type: "set-personas",
         personas: command.personas,
       }),
-      messages: [
-        {
-          type: "option",
-          text: `personas set: ${command.personas.join(", ") || "(default)"}`,
-        },
-      ],
+      messages: [{ type: "option", text }],
     };
   }
 

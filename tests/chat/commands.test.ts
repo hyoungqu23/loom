@@ -104,6 +104,15 @@ describe("chat/commands", () => {
       kind: "command",
       command: { type: "personas", personas: ["ryze", "zilean"] },
     });
+    // Both spellings clear the override list.
+    expect(parseChatInput("/personas")).toEqual({
+      kind: "command",
+      command: { type: "personas", personas: [] },
+    });
+    expect(parseChatInput("/personas reset")).toEqual({
+      kind: "command",
+      command: { type: "personas", personas: [] },
+    });
     expect(parseChatInput("/secondary on")).toEqual({
       kind: "command",
       command: { type: "secondary", enabled: true },

@@ -40,6 +40,7 @@ Chat slash commands (inside loom chat):
                          Record a gate decision (optionally targeting a
                          specific phase); drives autopilot too
   /personas a,b          Override personas for future runs
+  /personas reset        Clear the override (use phase matrix defaults)
   /secondary on|off      Include / exclude matrix secondary personas
   /synthesize on|off     Toggle the twistedfate synthesis pass
   /open context|plan|workers|synthesis

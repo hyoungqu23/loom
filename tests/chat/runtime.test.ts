@@ -187,6 +187,28 @@ describe("chat/runtime", () => {
     ]);
   });
 
+  it("/personas with no list clears the override and reports a reset message", async () => {
+    const sessionDir = createPhaseSession("personas reset");
+    let state = createInitialChatState({
+      sessionDir,
+      feature: "personas-reset",
+      currentPhase: "discuss",
+    });
+    state = chatReducer(state, {
+      type: "set-personas",
+      personas: ["zilean", "ryze"],
+    });
+
+    const result = await executeChatCommand(state, {
+      type: "personas",
+      personas: [],
+    });
+
+    expect(result.state.options.personas).toEqual([]);
+    expect(result.messages[0].text).toContain("personas reset");
+    expect(result.messages[0].text).toContain("phase matrix defaults");
+  });
+
   it("returns a status message without mutating state", async () => {
     const sessionDir = createPhaseSession("chat status");
     const state = createInitialChatState({

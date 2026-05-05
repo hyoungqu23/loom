@@ -127,11 +127,22 @@ export function parseChatInput(input: string): ChatParseResult {
   }
 
   if (name === "personas") {
+    // Three call shapes:
+    //   /personas a,b      → set the override list
+    //   /personas reset    → clear the override list (use phase matrix)
+    //   /personas          → same as /personas reset (legacy spelling)
+    const trimmed = rest.trim();
+    if (trimmed === "" || trimmed === "reset") {
+      return {
+        kind: "command",
+        command: { type: "personas", personas: [] },
+      };
+    }
     return {
       kind: "command",
       command: {
         type: "personas",
-        personas: rest
+        personas: trimmed
           .split(",")
           .map((persona) => persona.trim())
           .filter(Boolean),
