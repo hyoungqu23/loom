@@ -28,7 +28,9 @@ export type ChatKeyEvent = {
 
 export type ChatKeyDeps = {
   busy: boolean;
+  cancelRequested: boolean;
   appendNotice: (text: string) => void;
+  markCancelRequested: () => void;
   removeLastChar: () => void;
   appendChar: (char: string) => void;
   submit: () => void;
@@ -40,13 +42,20 @@ export function dispatchChatKey(
   deps: ChatKeyDeps,
 ): void {
   if (event.ctrl && (event.char === "c" || event.char === "")) {
-    if (deps.busy) {
-      deps.appendNotice(
-        "cancel requested; current run will continue to completion",
-      );
+    if (!deps.busy) {
+      deps.exit();
       return;
     }
-    deps.exit();
+    if (deps.cancelRequested) {
+      // Second Ctrl+C while still busy → force exit. The in-flight
+      // child process keeps running but the user wanted out.
+      deps.exit();
+      return;
+    }
+    deps.appendNotice(
+      "cancel requested; current run will continue. Press Ctrl+C again to force exit.",
+    );
+    deps.markCancelRequested();
     return;
   }
   if (deps.busy) return;
@@ -73,6 +82,13 @@ export type ChatUIState = {
   snapshot: ChatSnapshot;
   input: string;
   busy: boolean;
+  /**
+   * `true` after the user pressed Ctrl+C once while busy. Cleared on
+   * submit/start (new run) and on submit/finish / submit/error (run
+   * finished without a forced exit). A second Ctrl+C while this is
+   * still set forces an exit.
+   */
+  cancelRequested: boolean;
 };
 
 export type ChatUIAction =
@@ -83,7 +99,8 @@ export type ChatUIAction =
   | { type: "transcript/replace"; transcript: Transcript }
   | { type: "submit/start" }
   | { type: "submit/finish"; snapshot: ChatSnapshot }
-  | { type: "submit/error"; entry: TranscriptMessage };
+  | { type: "submit/error"; entry: TranscriptMessage }
+  | { type: "cancel/request" };
 
 export function chatUIReducer(
   state: ChatUIState,
@@ -110,18 +127,26 @@ export function chatUIReducer(
         snapshot: { ...state.snapshot, transcript: action.transcript },
       };
     case "submit/start":
-      return { ...state, busy: true };
+      return { ...state, busy: true, cancelRequested: false };
     case "submit/finish":
-      return { ...state, busy: false, snapshot: action.snapshot };
+      return {
+        ...state,
+        busy: false,
+        cancelRequested: false,
+        snapshot: action.snapshot,
+      };
     case "submit/error":
       return {
         ...state,
         busy: false,
+        cancelRequested: false,
         snapshot: {
           ...state.snapshot,
           transcript: [...state.snapshot.transcript, action.entry],
         },
       };
+    case "cancel/request":
+      return { ...state, cancelRequested: true };
   }
 }
 
@@ -147,6 +172,7 @@ export function InteractiveChat(
     snapshot: props.initialSnapshot,
     input: "",
     busy: false,
+    cancelRequested: false,
   }));
 
   const uiRef = React.useRef(ui);
@@ -194,11 +220,13 @@ export function InteractiveChat(
       },
       {
         busy: uiRef.current.busy,
+        cancelRequested: uiRef.current.cancelRequested,
         appendNotice: (text) =>
           dispatch({
             type: "transcript/append",
             entry: { type: "system", text },
           }),
+        markCancelRequested: () => dispatch({ type: "cancel/request" }),
         removeLastChar: () => dispatch({ type: "input/backspace" }),
         appendChar: (next) => dispatch({ type: "input/append", char: next }),
         submit: () => void submit(),

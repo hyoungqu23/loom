@@ -101,7 +101,7 @@ phase 실행 직후 detail 패널이 자동 갱신된다.
 
 ### 0.5.4 취소 / 에러 UX
 
-- Ctrl+C — idle일 때 깔끔히 종료. 실행 중일 때는 "cancel requested" 알림만 transcript에 남기고 현재 워커는 끝까지 돌린다.
+- Ctrl+C — idle일 때 깔끔히 종료. 실행 중일 때 한 번 누르면 "cancel requested" 알림만 transcript에 남기고 현재 워커는 끝까지 돌린다. **두 번째 Ctrl+C를 누르면 워커가 끝나기 전이라도 강제 종료**한다(스폰된 자식 프로세스는 그대로 진행됨 — 진정한 child kill은 아직 미지원).
 - 런타임 오류(spawn 실패, STATE.md 누락, ollama 프롬프트 한계 초과 등)는 `chat error: <message>` 형태로 transcript에 기록되고 채팅 자체는 살아 있다.
 
 ---

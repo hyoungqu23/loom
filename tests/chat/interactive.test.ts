@@ -12,7 +12,9 @@ import { createInitialChatState } from "../../src/chat/state.js";
 function makeDeps() {
   return {
     busy: false,
+    cancelRequested: false,
     appendNotice: vi.fn(),
+    markCancelRequested: vi.fn(),
     removeLastChar: vi.fn(),
     appendChar: vi.fn(),
     submit: vi.fn(),
@@ -53,14 +55,27 @@ describe("dispatchChatKey", () => {
     expect(deps.appendNotice).not.toHaveBeenCalled();
   });
 
-  it("posts a cancel notice on Ctrl+C while busy and does not exit", () => {
+  it("posts a cancel notice on the first Ctrl+C while busy, does not exit, and marks the request", () => {
     const deps = makeDeps();
     deps.busy = true;
     dispatchChatKey({ char: "c", ctrl: true }, deps);
     expect(deps.exit).not.toHaveBeenCalled();
-    expect(deps.appendNotice).toHaveBeenCalledWith(
-      "cancel requested; current run will continue to completion",
+    expect(deps.appendNotice).toHaveBeenCalledTimes(1);
+    expect(deps.appendNotice.mock.calls[0][0]).toContain("cancel requested");
+    expect(deps.appendNotice.mock.calls[0][0]).toContain(
+      "Press Ctrl+C again",
     );
+    expect(deps.markCancelRequested).toHaveBeenCalledTimes(1);
+  });
+
+  it("force-exits on the second Ctrl+C while still busy", () => {
+    const deps = makeDeps();
+    deps.busy = true;
+    deps.cancelRequested = true;
+    dispatchChatKey({ char: "c", ctrl: true }, deps);
+    expect(deps.exit).toHaveBeenCalledTimes(1);
+    expect(deps.appendNotice).not.toHaveBeenCalled();
+    expect(deps.markCancelRequested).not.toHaveBeenCalled();
   });
 
   it("drops normal keystrokes while busy so input cannot accumulate", () => {
@@ -95,6 +110,7 @@ describe("chatUIReducer", () => {
       },
       input: "",
       busy: false,
+      cancelRequested: false,
     };
   }
 
@@ -161,6 +177,32 @@ describe("chatUIReducer", () => {
     s = chatUIReducer(s, { type: "submit/finish", snapshot: nextSnapshot });
     expect(s.busy).toBe(false);
     expect(s.snapshot).toBe(nextSnapshot);
+  });
+
+  it("cancel/request raises the flag and submit/start clears it for a new run", () => {
+    let s = chatUIReducer(seed(), { type: "cancel/request" });
+    expect(s.cancelRequested).toBe(true);
+    s = chatUIReducer(s, { type: "submit/start" });
+    expect(s.cancelRequested).toBe(false);
+  });
+
+  it("submit/finish and submit/error both clear cancelRequested", () => {
+    let s = chatUIReducer(seed(), { type: "submit/start" });
+    s = chatUIReducer(s, { type: "cancel/request" });
+    expect(s.cancelRequested).toBe(true);
+    s = chatUIReducer(s, {
+      type: "submit/finish",
+      snapshot: { ...s.snapshot, transcript: [] },
+    });
+    expect(s.cancelRequested).toBe(false);
+
+    let t = chatUIReducer(seed(), { type: "submit/start" });
+    t = chatUIReducer(t, { type: "cancel/request" });
+    t = chatUIReducer(t, {
+      type: "submit/error",
+      entry: { type: "error", text: "boom" },
+    });
+    expect(t.cancelRequested).toBe(false);
   });
 
   it("submit/error clears busy and appends the error entry to snapshot.transcript", () => {
