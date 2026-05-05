@@ -43,6 +43,25 @@ describe("chat/start", () => {
     expect(element.props.initialSnapshot.detail).toBe("");
   });
 
+  it("hydrates context and plan flags when opening an existing session", async () => {
+    const sessionDir = createPhaseSession("hydrated");
+    fs.writeFileSync(path.join(sessionDir, "CONTEXT.md"), "# Context\n");
+    fs.writeFileSync(path.join(sessionDir, "PLAN.md"), "# Plan\n");
+    const render = vi.fn();
+
+    await startChat({
+      feature: "hydrated",
+      loadInk: async () => ({
+        createElement: (type: unknown, props: unknown) => ({ type, props }),
+        render,
+      }),
+    });
+
+    const [element] = render.mock.calls[0];
+    expect(element.props.initialSnapshot.state.hasContext).toBe(true);
+    expect(element.props.initialSnapshot.state.hasPlan).toBe(true);
+  });
+
   it("creates a missing explicit session before rendering", async () => {
     const render = vi.fn();
 

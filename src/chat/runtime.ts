@@ -1,5 +1,4 @@
-import * as fs from "fs";
-import * as path from "path";
+import { readChatArtifactFlags } from "./artifacts.js";
 import { ChatCommand } from "./commands.js";
 import { ChatState, chatReducer, renderChatStatus } from "./state.js";
 import { PhaseRunResult } from "../phases/runner.js";
@@ -430,15 +429,12 @@ export async function executeChatCommand(
 
   if (command.type === "refresh") {
     const persisted = loadState(state.sessionDir);
-    const hasContext = fs.existsSync(
-      path.join(state.sessionDir, "CONTEXT.md"),
-    );
-    const hasPlan = fs.existsSync(path.join(state.sessionDir, "PLAN.md"));
+    const artifacts = readChatArtifactFlags(state.sessionDir);
     const refreshed = chatReducer(state, {
       type: "refresh",
       currentPhase: persisted.currentPhase,
-      hasContext,
-      hasPlan,
+      hasContext: artifacts.hasContext,
+      hasPlan: artifacts.hasPlan,
     });
     return {
       state: refreshed,
@@ -446,8 +442,8 @@ export async function executeChatCommand(
         {
           type: "refresh",
           text: `refreshed: phase=${persisted.currentPhase} context=${
-            hasContext ? "yes" : "no"
-          } plan=${hasPlan ? "yes" : "no"}`,
+            artifacts.hasContext ? "yes" : "no"
+          } plan=${artifacts.hasPlan ? "yes" : "no"}`,
         },
       ],
     };

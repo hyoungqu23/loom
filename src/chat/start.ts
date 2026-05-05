@@ -1,5 +1,6 @@
 import * as path from "path";
 import { InteractiveChat } from "./Interactive.js";
+import { readChatArtifactFlags } from "./artifacts.js";
 import { loadInkModules, InkModules } from "./ink.js";
 import { createInitialChatState } from "./state.js";
 import { resolveChatSession } from "./session.js";
@@ -23,10 +24,13 @@ export async function startChat(opts: StartChatOptions = {}): Promise<void> {
   }
 
   const state = loadState(resolved.sessionDir);
+  const artifacts = readChatArtifactFlags(resolved.sessionDir);
   const chatState = createInitialChatState({
     sessionDir: resolved.sessionDir,
     feature: state.feature,
     currentPhase: state.currentPhase,
+    hasContext: artifacts.hasContext,
+    hasPlan: artifacts.hasPlan,
   });
   const modules = await (opts.loadInk ?? loadInkModules)();
   const messageText = resolved.created
