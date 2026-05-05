@@ -15,8 +15,18 @@ import { runExportCommand } from "./commands/export";
 import { runCronCommand } from "./commands/cron";
 import { runRuntime } from "./engine";
 import { buildRuntimeCommand } from "./runtimes";
+import { startChat } from "./chat/start";
 
 type Handler = (positionals: string[], flags: Flags) => Promise<void> | void;
+
+export type ChatStartOptions = {
+  feature?: string;
+};
+
+export type CliDispatchDeps = {
+  isTTY: boolean;
+  startChat: (opts: ChatStartOptions) => Promise<void> | void;
+};
 
 const HANDLERS: { [key: string]: Handler } = {
   init: (_pos, flags) => {
@@ -54,13 +64,31 @@ const HANDLERS: { [key: string]: Handler } = {
   },
 };
 
-export async function main(argv: string[]): Promise<void> {
+async function defaultStartChat(opts: ChatStartOptions): Promise<void> {
+  await startChat(opts);
+}
+
+export async function dispatchCli(
+  argv: string[],
+  deps: CliDispatchDeps,
+): Promise<void> {
   const { positionals, flags } = parseArgs(argv);
   const command = positionals[0];
 
   const cwdFlag = flagString(flags.cwd);
   if (cwdFlag) {
     setActiveWorkspace(path.resolve(cwdFlag));
+  }
+
+  if (command === "chat") {
+    const feature = flagString(flags.feature) || undefined;
+    await deps.startChat(feature ? { feature } : {});
+    return;
+  }
+
+  if (!command && deps.isTTY && !flagBool(flags.help)) {
+    await deps.startChat({});
+    return;
   }
 
   if (!command || command === "help" || flagBool(flags.help)) {
@@ -73,6 +101,13 @@ export async function main(argv: string[]): Promise<void> {
     throw new Error(`Unknown command: ${command}`);
   }
   await handler(positionals, flags);
+}
+
+export async function main(argv: string[]): Promise<void> {
+  await dispatchCli(argv, {
+    isTTY: Boolean(process.stdout.isTTY),
+    startChat: defaultStartChat,
+  });
 }
 
 export type CliCommandResult = {

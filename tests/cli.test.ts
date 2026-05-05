@@ -3,7 +3,7 @@ import * as os from "os";
 import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { captureConsole } from "../src/util/capture";
-import { main } from "../src/cli";
+import { dispatchCli, main } from "../src/cli";
 import { runCliCommand } from "../src/cli";
 import { clearDefaultsCache } from "../src/config";
 import { createPhaseSession } from "../src/phases/session";
@@ -128,6 +128,63 @@ describe("main", () => {
   it("bare `loom` (no command) prints help instead of opening a UI", async () => {
     const buf: string[] = [];
     await captureConsole(buf, () => main([]));
+    expect(buf.join("\n")).toMatch(/Usage:/);
+  });
+});
+
+describe("dispatchCli", () => {
+  function createDeps(isTTY: boolean) {
+    const chatStarts: { feature?: string }[] = [];
+    return {
+      chatStarts,
+      deps: {
+        isTTY,
+        startChat: async (opts: { feature?: string }) => {
+          chatStarts.push(opts);
+        },
+      },
+    };
+  }
+
+  it("starts Chat TUI for bare `loom` in an interactive TTY", async () => {
+    const { deps, chatStarts } = createDeps(true);
+    const buf: string[] = [];
+
+    await captureConsole(buf, () => dispatchCli([], deps));
+
+    expect(chatStarts).toEqual([{}]);
+    expect(buf.join("\n")).not.toMatch(/Usage:/);
+  });
+
+  it("prints help for bare `loom` outside an interactive TTY", async () => {
+    const { deps, chatStarts } = createDeps(false);
+    const buf: string[] = [];
+
+    await captureConsole(buf, () => dispatchCli([], deps));
+
+    expect(chatStarts).toEqual([]);
+    expect(buf.join("\n")).toMatch(/Usage:/);
+  });
+
+  it("starts Chat TUI for explicit `loom chat --feature <slug>`", async () => {
+    const { deps, chatStarts } = createDeps(false);
+    const buf: string[] = [];
+
+    await captureConsole(buf, () =>
+      dispatchCli(["chat", "--feature", "alpha"], deps),
+    );
+
+    expect(chatStarts).toEqual([{ feature: "alpha" }]);
+    expect(buf.join("\n")).not.toMatch(/Usage:/);
+  });
+
+  it("prints help for help commands even in an interactive TTY", async () => {
+    const { deps, chatStarts } = createDeps(true);
+    const buf: string[] = [];
+
+    await captureConsole(buf, () => dispatchCli(["--help"], deps));
+
+    expect(chatStarts).toEqual([]);
     expect(buf.join("\n")).toMatch(/Usage:/);
   });
 });
