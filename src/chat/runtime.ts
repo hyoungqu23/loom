@@ -4,7 +4,7 @@ import { ChatState, chatReducer, renderChatStatus } from "./state.js";
 import { PhaseRunResult } from "../phases/runner.js";
 import { recordPhaseGate } from "../phases/gate.js";
 import { loadState } from "../phases/session.js";
-import { GateDecision, LoomPhase } from "../types.js";
+import { GateDecision, LoomPhase, LOOM_PHASES } from "../types.js";
 import {
   DEFAULT_AUTOPILOT_END_PHASE,
   inferAutopilotStartPhase,
@@ -171,6 +171,25 @@ async function startAutopilot(
   const startPhase =
     startPhaseOverride ?? inferAutopilotStartPhase(state, task);
   const endPhase = endPhaseOverride ?? DEFAULT_AUTOPILOT_END_PHASE;
+  // Guard: end phase must come at or after the start phase in
+  // LOOM_PHASES order. Without this an /autopilot --end <earlier>
+  // call (or an inferred startPhase past an explicit --end) would
+  // satisfy isAutopilotEnd only by accident — never on the resolved
+  // start phase, since nextLoomPhase always moves forward — and the
+  // loop would silently run all the way to reflect.
+  const startIdx = LOOM_PHASES.indexOf(startPhase);
+  const endIdx = LOOM_PHASES.indexOf(endPhase);
+  if (endIdx < startIdx) {
+    return {
+      state,
+      messages: [
+        {
+          type: "error",
+          text: `autopilot end phase ${endPhase} comes before start phase ${startPhase}; pick --end ${startPhase} or later`,
+        },
+      ],
+    };
+  }
   const startMsg: ChatRuntimeMessage = {
     type: "autopilot-start",
     text: `autopilot started: ${startPhase} → ${endPhase}`,

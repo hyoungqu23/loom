@@ -228,6 +228,52 @@ describe("chat/autopilot loop", () => {
     });
   });
 
+  it("rejects /autopilot when --end comes before --start in phase order", async () => {
+    const state = buildState("autopilot inverted");
+
+    const result = await executeChatCommand(state, {
+      type: "autopilot",
+      task: "broken scope",
+      startPhase: "build",
+      endPhase: "discuss",
+    });
+
+    expect(result.state).toBe(state);
+    expect(result.state.autopilot).toBe(null);
+    expect(result.messages).toEqual([
+      expect.objectContaining({
+        type: "error",
+        text: expect.stringContaining(
+          "autopilot end phase discuss comes before start phase build",
+        ),
+      }),
+    ]);
+  });
+
+  it("rejects /autopilot when an inferred start outruns an explicit --end", async () => {
+    // currentPhase is plan, no --start override → inferAutopilotStartPhase
+    // refuses to regress and returns plan. --end discuss is earlier.
+    const sessionDir = createPhaseSession("autopilot inferred outruns end");
+    let state = createInitialChatState({
+      sessionDir,
+      feature: "autopilot-inferred-outruns-end",
+      currentPhase: "plan",
+    });
+    state = chatReducer(state, { type: "set-synthesize", enabled: false });
+
+    const result = await executeChatCommand(state, {
+      type: "autopilot",
+      task: "this should fail",
+      endPhase: "discuss",
+    });
+
+    expect(result.state.autopilot).toBe(null);
+    expect(result.messages[0]).toMatchObject({
+      type: "error",
+      text: expect.stringContaining("comes before start phase plan"),
+    });
+  });
+
   it("rejects /autopilot when one is already in flight", async () => {
     let state = buildState("autopilot conflict");
 
