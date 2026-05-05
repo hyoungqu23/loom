@@ -1,8 +1,8 @@
 import { ChatCommand } from "./commands.js";
 import { ChatState, chatReducer, renderChatStatus } from "./state.js";
-import { runPhase, PhaseRunResult } from "../phases/runner.js";
+import { PhaseRunResult } from "../phases/runner.js";
 import { recordPhaseGate } from "../phases/gate.js";
-import { AgentRun, GateDecision, LoomPhase, WorkerResult } from "../types.js";
+import { GateDecision, LoomPhase } from "../types.js";
 import {
   DEFAULT_AUTOPILOT_END_PHASE,
   isAutopilotEnd,
@@ -14,6 +14,7 @@ import {
   openSynthesis,
   openWorkersIndex,
 } from "./files.js";
+import { ChatPhaseProgress, runChatPhase } from "./phaseAdapter.js";
 
 export type ChatRuntimeMessage =
   | { type: "run-start"; text: string }
@@ -48,6 +49,28 @@ function emitProgress(
   opts.onMessage?.(message);
 }
 
+function progressToMessage(event: ChatPhaseProgress): ChatRuntimeMessage {
+  switch (event.type) {
+    case "worker-start":
+      return { type: "worker-start", text: `worker started: ${event.persona}` };
+    case "worker-progress":
+      return {
+        type: "worker-progress",
+        text: `worker ${event.persona} ${event.stream} +${event.bytes} bytes`,
+      };
+    case "worker-done":
+      return {
+        type: "worker-done",
+        text: `worker finished: ${event.persona} status=${event.status}`,
+      };
+    case "synthesis-start":
+      return {
+        type: "synthesis-start",
+        text: `synthesis started: ${event.persona}`,
+      };
+  }
+}
+
 /**
  * Run a single Loom phase from chat and return progress messages plus
  * the resulting `ChatState`. Does not mutate gate state. Used by both
@@ -58,7 +81,7 @@ function emitProgress(
  * the user at the input line (single-phase) or move into a
  * waiting-for-gate state (autopilot).
  */
-async function runChatPhase(
+async function executeChatPhase(
   state: ChatState,
   phase: LoomPhase,
   task: string,
@@ -74,40 +97,12 @@ async function runChatPhase(
   };
   emitProgress(opts, startMessage);
   const runningState = chatReducer(state, { type: "run-start", phase });
-  const phaseResult = await runPhase(state.sessionDir, phase, {
+  const phaseResult = await runChatPhase(state.sessionDir, phase, {
     task,
-    flags: {},
-    personas:
-      state.options.personas.length > 0 ? state.options.personas : undefined,
+    personas: state.options.personas,
     includeSecondary: state.options.includeSecondary,
     synthesize: state.options.synthesize,
-    hooks: {
-      onWorkerStart: (worker: AgentRun) => {
-        emitProgress(opts, {
-          type: "worker-start",
-          text: `worker started: ${worker.agentName}`,
-        });
-      },
-      onWorkerData: (worker: AgentRun, stream, text) => {
-        if (!text) return;
-        emitProgress(opts, {
-          type: "worker-progress",
-          text: `worker ${worker.agentName} ${stream} +${Buffer.byteLength(text)} bytes`,
-        });
-      },
-      onWorkerDone: (result: WorkerResult) => {
-        emitProgress(opts, {
-          type: "worker-done",
-          text: `worker finished: ${result.agentName} status=${result.status}`,
-        });
-      },
-      onSynthesisStart: (worker: AgentRun) => {
-        emitProgress(opts, {
-          type: "synthesis-start",
-          text: `synthesis started: ${worker.agentName}`,
-        });
-      },
-    },
+    onEvent: (event) => emitProgress(opts, progressToMessage(event)),
   });
   const finishMessage: ChatRuntimeMessage = {
     type: "run-finish",
@@ -147,7 +142,7 @@ async function startAutopilot(
     task,
     endPhase,
   });
-  const phaseRun = await runChatPhase(armedState, state.currentPhase, task, opts);
+  const phaseRun = await executeChatPhase(armedState, state.currentPhase, task, opts);
   const waitState = chatReducer(phaseRun.state, {
     type: "gate-wait",
     phase: phaseRun.phaseResult.stateAfter.currentPhase,
@@ -189,7 +184,7 @@ async function advanceAutopilotAfterProceed(
     emitProgress(opts, stopMsg);
     return { state: stoppedState, messages: [stopMsg] };
   }
-  const phaseRun = await runChatPhase(state, next, autopilot.task, opts);
+  const phaseRun = await executeChatPhase(state, next, autopilot.task, opts);
   const waitState = chatReducer(phaseRun.state, {
     type: "gate-wait",
     phase: phaseRun.phaseResult.stateAfter.currentPhase,
@@ -210,7 +205,7 @@ async function rerunAutopilotPhase(
 ): Promise<ChatCommandExecution> {
   const autopilot = state.autopilot;
   if (!autopilot) return { state, messages: [] };
-  const phaseRun = await runChatPhase(state, phase, autopilot.task, opts);
+  const phaseRun = await executeChatPhase(state, phase, autopilot.task, opts);
   const waitState = chatReducer(phaseRun.state, {
     type: "gate-wait",
     phase: phaseRun.phaseResult.stateAfter.currentPhase,
@@ -263,7 +258,7 @@ export async function executeChatCommand(
   opts: ChatRuntimeOptions = {},
 ): Promise<ChatCommandExecution> {
   if (command.type === "phase") {
-    const phaseRun = await runChatPhase(
+    const phaseRun = await executeChatPhase(
       state,
       command.phase,
       command.task,
