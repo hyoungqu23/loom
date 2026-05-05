@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { LoomPhase, LOOM_PHASES } from "../types.js";
+import { PREVIEW_BYTES } from "./constants.js";
 
 /**
  * `/open` previews keep the chat detail panel readable: single-file
@@ -8,7 +9,6 @@ import { LoomPhase, LOOM_PHASES } from "../types.js";
  * lists files (size + name) so a session with megabytes of worker
  * output cannot blow up the UI buffer.
  */
-const PREVIEW_BYTES = 4000;
 const WORKERS_DIR = "workers";
 
 function clamp(text: string, max: number): string {

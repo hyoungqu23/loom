@@ -6,6 +6,7 @@ import {
   ChatSnapshot,
   Transcript,
   TranscriptMessage,
+  clampTranscript,
 } from "./transcript.js";
 
 const DEFAULT_DETAIL_PLACEHOLDER =
@@ -118,13 +119,19 @@ export function chatUIReducer(
         ...state,
         snapshot: {
           ...state.snapshot,
-          transcript: [...state.snapshot.transcript, action.entry],
+          transcript: clampTranscript([
+            ...state.snapshot.transcript,
+            action.entry,
+          ]),
         },
       };
     case "transcript/replace":
       return {
         ...state,
-        snapshot: { ...state.snapshot, transcript: action.transcript },
+        snapshot: {
+          ...state.snapshot,
+          transcript: clampTranscript(action.transcript),
+        },
       };
     case "submit/start":
       return { ...state, busy: true, cancelRequested: false };
@@ -133,7 +140,10 @@ export function chatUIReducer(
         ...state,
         busy: false,
         cancelRequested: false,
-        snapshot: action.snapshot,
+        snapshot: {
+          ...action.snapshot,
+          transcript: clampTranscript(action.snapshot.transcript),
+        },
       };
     case "submit/error":
       return {
@@ -142,7 +152,10 @@ export function chatUIReducer(
         cancelRequested: false,
         snapshot: {
           ...state.snapshot,
-          transcript: [...state.snapshot.transcript, action.entry],
+          transcript: clampTranscript([
+            ...state.snapshot.transcript,
+            action.entry,
+          ]),
         },
       };
     case "cancel/request":

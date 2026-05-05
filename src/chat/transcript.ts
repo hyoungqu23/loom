@@ -1,6 +1,7 @@
 import { ChatParseResult } from "./commands.js";
 import { ChatRuntimeMessage } from "./runtime.js";
 import type { ChatState } from "./state.js";
+import { TRANSCRIPT_MAX } from "./constants.js";
 
 export type TranscriptMessage = {
   type: "user" | "system" | "error" | "gate";
@@ -8,6 +9,19 @@ export type TranscriptMessage = {
 };
 
 export type Transcript = TranscriptMessage[];
+
+/**
+ * Cap the transcript at TRANSCRIPT_MAX entries by dropping the
+ * oldest. A long autopilot run can otherwise produce thousands of
+ * worker-progress messages per phase, all of which Ink re-paints on
+ * every keystroke. The cut-off is silent — anyone interested in the
+ * full history can rerun with --no-redact and inspect the raw worker
+ * output files on disk.
+ */
+export function clampTranscript(transcript: Transcript): Transcript {
+  if (transcript.length <= TRANSCRIPT_MAX) return transcript;
+  return transcript.slice(transcript.length - TRANSCRIPT_MAX);
+}
 
 /**
  * Single unit-of-truth carried in and out of the chat controller and
@@ -59,24 +73,30 @@ export function appendParsedInputToTranscript(
   result: ChatParseResult,
 ): Transcript {
   if (result.kind === "plain") {
-    return [...transcript, { type: "user", text: result.text }];
+    return clampTranscript([...transcript, { type: "user", text: result.text }]);
   }
   if (result.kind === "error") {
-    return [...transcript, { type: "error", text: result.message }];
+    return clampTranscript([
+      ...transcript,
+      { type: "error", text: result.message },
+    ]);
   }
-  return [...transcript, { type: "user", text: commandToText(result) }];
+  return clampTranscript([
+    ...transcript,
+    { type: "user", text: commandToText(result) },
+  ]);
 }
 
 export function appendRuntimeMessagesToTranscript(
   transcript: Transcript,
   messages: ChatRuntimeMessage[],
 ): Transcript {
-  return [
+  return clampTranscript([
     ...transcript,
     ...messages.map((message): TranscriptMessage => {
       if (message.type === "error") return { type: "error", text: message.text };
       if (message.type === "gate-wait") return { type: "gate", text: message.text };
       return { type: "system", text: message.text };
     }),
-  ];
+  ]);
 }

@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   appendParsedInputToTranscript,
   appendRuntimeMessagesToTranscript,
+  clampTranscript,
   createTranscript,
+  Transcript,
 } from "../../src/chat/transcript.js";
+import { TRANSCRIPT_MAX } from "../../src/chat/constants.js";
 
 describe("chat/transcript", () => {
   it("appends plain user input as a user transcript message", () => {
@@ -63,5 +66,48 @@ describe("chat/transcript", () => {
     expect(transcript).toEqual([
       { type: "gate", text: "waiting for gate: plan" },
     ]);
+  });
+});
+
+describe("clampTranscript", () => {
+  it("returns the same array reference under the cap", () => {
+    const transcript: Transcript = [
+      { type: "user", text: "hi" },
+      { type: "system", text: "ok" },
+    ];
+    expect(clampTranscript(transcript)).toBe(transcript);
+  });
+
+  it("drops oldest entries past TRANSCRIPT_MAX", () => {
+    const transcript: Transcript = Array.from(
+      { length: TRANSCRIPT_MAX + 5 },
+      (_, i) => ({ type: "system" as const, text: `msg ${i}` }),
+    );
+
+    const clamped = clampTranscript(transcript);
+
+    expect(clamped).toHaveLength(TRANSCRIPT_MAX);
+    expect(clamped[0]).toEqual({ type: "system", text: "msg 5" });
+    expect(clamped[clamped.length - 1]).toEqual({
+      type: "system",
+      text: `msg ${TRANSCRIPT_MAX + 4}`,
+    });
+  });
+
+  it("appendRuntimeMessagesToTranscript respects the cap as new messages arrive", () => {
+    const initial: Transcript = Array.from(
+      { length: TRANSCRIPT_MAX },
+      (_, i) => ({ type: "system" as const, text: `m${i}` }),
+    );
+    const out = appendRuntimeMessagesToTranscript(initial, [
+      { type: "run-finish", text: "phase finished: discuss workers=1" },
+    ]);
+    expect(out).toHaveLength(TRANSCRIPT_MAX);
+    expect(out[out.length - 1]).toEqual({
+      type: "system",
+      text: "phase finished: discuss workers=1",
+    });
+    // Oldest must have been dropped to make room.
+    expect(out[0]).toEqual({ type: "system", text: "m1" });
   });
 });

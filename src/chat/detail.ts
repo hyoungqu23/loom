@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { LoomPhase, WorkerResult } from "../types.js";
+import { PREVIEW_BYTES, WORKER_HEAD_BYTES } from "./constants.js";
 
 /**
  * The detail panel surfaces *one* phase's outcome at a time. Synthesis
@@ -8,8 +9,6 @@ import { LoomPhase, WorkerResult } from "../types.js";
  * raw worker stdout is the fallback when synthesis hasn't been produced
  * yet (e.g. `--synthesize false` runs).
  */
-const SYNTHESIS_PREVIEW_BYTES = 4000;
-const WORKER_HEAD_BYTES = 200;
 
 export function readSynthesis(
   sessionDir: string,
@@ -49,7 +48,7 @@ export function buildPhaseDetail(
 ): string {
   const synthesis = readSynthesis(sessionDir, phase);
   if (synthesis) {
-    return `# synthesis — ${phase}\n\n${clamp(synthesis, SYNTHESIS_PREVIEW_BYTES)}`;
+    return `# synthesis — ${phase}\n\n${clamp(synthesis, PREVIEW_BYTES)}`;
   }
   if (workers.length > 0) {
     return `# workers — ${phase} (synthesis missing)\n\n${summarizeWorkers(workers)}`;

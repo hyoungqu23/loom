@@ -176,7 +176,9 @@ describe("chatUIReducer", () => {
     };
     s = chatUIReducer(s, { type: "submit/finish", snapshot: nextSnapshot });
     expect(s.busy).toBe(false);
-    expect(s.snapshot).toBe(nextSnapshot);
+    // submit/finish runs clampTranscript on the incoming snapshot, so
+    // the returned object is a fresh shallow copy. Compare structurally.
+    expect(s.snapshot).toStrictEqual(nextSnapshot);
   });
 
   it("cancel/request raises the flag and submit/start clears it for a new run", () => {
