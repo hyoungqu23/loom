@@ -41,7 +41,15 @@ export async function startChat(opts: StartChatOptions = {}): Promise<void> {
     detail: "",
   };
 
-  modules.render(
+  // Hold onto the Ink render instance so we can await its exit.
+  // Without waitUntilExit() the startChat promise resolves
+  // immediately and main() falls off the end while Ink still owns
+  // stdin in raw mode — the process happens to stay alive but
+  // shutdown ordering is implicit. Await keeps Ctrl+C / /quit clean.
+  const instance = modules.render(
     modules.createElement(InteractiveChat, { initialSnapshot }),
   );
+  if (instance && typeof instance.waitUntilExit === "function") {
+    await instance.waitUntilExit();
+  }
 }
