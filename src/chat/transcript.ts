@@ -46,6 +46,7 @@ function commandToText(result: Extract<ChatParseResult, { kind: "command" }>): s
     case "status":
     case "help":
     case "quit":
+    case "refresh":
       return `/${command.type}`;
   }
 }

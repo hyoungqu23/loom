@@ -1,7 +1,10 @@
+import * as fs from "fs";
+import * as path from "path";
 import { ChatCommand } from "./commands.js";
 import { ChatState, chatReducer, renderChatStatus } from "./state.js";
 import { PhaseRunResult } from "../phases/runner.js";
 import { recordPhaseGate } from "../phases/gate.js";
+import { loadState } from "../phases/session.js";
 import { GateDecision, LoomPhase } from "../types.js";
 import {
   DEFAULT_AUTOPILOT_END_PHASE,
@@ -29,6 +32,7 @@ export type ChatRuntimeMessage =
   | { type: "autopilot-stop"; text: string }
   | { type: "option"; text: string }
   | { type: "status"; text: string }
+  | { type: "refresh"; text: string }
   | { type: "open"; text: string }
   | { type: "error"; text: string };
 
@@ -365,6 +369,31 @@ export async function executeChatCommand(
     return {
       state,
       messages: [{ type: "status", text: renderChatStatus(state) }],
+    };
+  }
+
+  if (command.type === "refresh") {
+    const persisted = loadState(state.sessionDir);
+    const hasContext = fs.existsSync(
+      path.join(state.sessionDir, "CONTEXT.md"),
+    );
+    const hasPlan = fs.existsSync(path.join(state.sessionDir, "PLAN.md"));
+    const refreshed = chatReducer(state, {
+      type: "refresh",
+      currentPhase: persisted.currentPhase,
+      hasContext,
+      hasPlan,
+    });
+    return {
+      state: refreshed,
+      messages: [
+        {
+          type: "refresh",
+          text: `refreshed: phase=${persisted.currentPhase} context=${
+            hasContext ? "yes" : "no"
+          } plan=${hasPlan ? "yes" : "no"}`,
+        },
+      ],
     };
   }
 

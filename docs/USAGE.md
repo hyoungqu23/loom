@@ -82,6 +82,7 @@ loom chat --feature billing-v2  # 명시적으로 특정 feature 세션 열기 (
 | `/synthesize on\|off` | twistedfate 합성 단계 활성/비활성. |
 | `/open context\|plan\|workers\|synthesis` | detail 패널에 해당 산출물 미리보기. `/open workers`는 파일 목록만 — 콘텐츠는 로드하지 않음. |
 | `/status` | 현재 chat / 세션 상태 한 줄 요약. |
+| `/refresh` | 외부 에디터로 STATE.md / CONTEXT.md / PLAN.md를 수정한 뒤 chat이 그 변경을 다시 읽어들이게 한다. |
 | `/help` | 슬래시 명령 목록. |
 | `/quit` | 종료. Ctrl+C로도 idle일 때 깔끔하게 빠져나간다. |
 

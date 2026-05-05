@@ -180,6 +180,57 @@ describe("chat/runtime", () => {
     expect(result.messages[0].text).toContain("phase=build");
   });
 
+  it("/refresh re-reads STATE.md / CONTEXT.md / PLAN.md from disk", async () => {
+    const sessionDir = createPhaseSession("refresh sync");
+    const state = createInitialChatState({
+      sessionDir,
+      feature: "refresh-sync",
+      currentPhase: "discuss",
+    });
+
+    // Simulate an external edit: write CONTEXT.md / PLAN.md and
+    // advance currentPhase by replaying writeState through loadState.
+    fs.writeFileSync(
+      path.join(sessionDir, "CONTEXT.md"),
+      "## problem\nx",
+      "utf8",
+    );
+    fs.writeFileSync(
+      path.join(sessionDir, "PLAN.md"),
+      "## approach\ny",
+      "utf8",
+    );
+    const persisted = loadState(sessionDir);
+    persisted.currentPhase = "build";
+    persisted.history = ["discuss", "plan", "build"];
+    fs.writeFileSync(
+      path.join(sessionDir, "STATE.md"),
+      [
+        "---",
+        `feature: ${persisted.feature}`,
+        "currentPhase: build",
+        "history: [discuss, plan, build]",
+        "gates: []",
+        "blockers: []",
+        `createdAt: ${persisted.createdAt}`,
+        `updatedAt: ${new Date().toISOString()}`,
+        "---",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const result = await executeChatCommand(state, { type: "refresh" });
+
+    expect(result.state.currentPhase).toBe("build");
+    expect(result.state.hasContext).toBe(true);
+    expect(result.state.hasPlan).toBe(true);
+    expect(result.messages[0]).toMatchObject({
+      type: "refresh",
+      text: expect.stringContaining("phase=build"),
+    });
+  });
+
   it("/open context loads the file into state.detail", async () => {
     const sessionDir = createPhaseSession("open context");
     fs.writeFileSync(

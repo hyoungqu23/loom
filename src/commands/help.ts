@@ -42,6 +42,8 @@ Chat slash commands (inside loom chat):
   /open context|plan|workers|synthesis
                          Preview the named artefact in the detail panel
   /status                Print the current chat / session snapshot
+  /refresh               Re-read STATE.md / CONTEXT.md / PLAN.md after editing
+                         the files outside the chat session
   /help                  Show the slash-command list inside the TUI
   /quit                  Exit the chat session (Ctrl+C also exits when idle)
 

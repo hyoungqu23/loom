@@ -62,6 +62,7 @@ describe("printHelp", () => {
       "/synthesize",
       "/open",
       "/status",
+      "/refresh",
       "/help",
       "/quit",
     ]) {

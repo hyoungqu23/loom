@@ -47,7 +47,13 @@ export type ChatAction =
   | { type: "gate-wait"; phase: LoomPhase }
   | { type: "run-finish"; phase: LoomPhase }
   | { type: "autopilot-start"; task: string; endPhase: LoomPhase }
-  | { type: "autopilot-stop" };
+  | { type: "autopilot-stop" }
+  | {
+      type: "refresh";
+      currentPhase: LoomPhase;
+      hasContext: boolean;
+      hasPlan: boolean;
+    };
 
 export function createInitialChatState(
   input: CreateInitialChatStateInput,
@@ -105,6 +111,13 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       };
     case "autopilot-stop":
       return { ...state, autopilot: null };
+    case "refresh":
+      return {
+        ...state,
+        currentPhase: action.currentPhase,
+        hasContext: action.hasContext,
+        hasPlan: action.hasPlan,
+      };
   }
 }
 

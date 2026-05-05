@@ -17,6 +17,7 @@ export type ChatCommand =
   | { type: "secondary"; enabled: boolean }
   | { type: "synthesize"; enabled: boolean }
   | { type: "status" }
+  | { type: "refresh" }
   | { type: "open"; target: "context" | "plan" | "workers" | "synthesis" }
   | { type: "help" }
   | { type: "quit" };
@@ -94,7 +95,12 @@ export function parseChatInput(input: string): ChatParseResult {
     return { kind: "command", command: { type: name, enabled: parsed } };
   }
 
-  if (name === "status" || name === "help" || name === "quit") {
+  if (
+    name === "status" ||
+    name === "help" ||
+    name === "quit" ||
+    name === "refresh"
+  ) {
     return { kind: "command", command: { type: name } };
   }
 
