@@ -263,6 +263,30 @@ describe("chat/runtime", () => {
     });
   });
 
+  it("/refresh appends a warning when autopilot is in flight", async () => {
+    const sessionDir = createPhaseSession("refresh during autopilot");
+    let state = createInitialChatState({
+      sessionDir,
+      feature: "refresh-during-autopilot",
+      currentPhase: "plan",
+    });
+    state = chatReducer(state, {
+      type: "autopilot-start",
+      task: "ship",
+      endPhase: "reflect",
+    });
+
+    const result = await executeChatCommand(state, { type: "refresh" });
+
+    expect(result.messages).toHaveLength(2);
+    expect(result.messages[0].type).toBe("refresh");
+    expect(result.messages[0].text).toContain("refreshed: phase=");
+    expect(result.messages[1]).toMatchObject({
+      type: "refresh",
+      text: expect.stringContaining("autopilot is in flight"),
+    });
+  });
+
   it("/refresh re-reads STATE.md / CONTEXT.md / PLAN.md from disk", async () => {
     const sessionDir = createPhaseSession("refresh sync");
     const state = createInitialChatState({

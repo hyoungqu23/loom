@@ -455,17 +455,27 @@ export async function executeChatCommand(
       hasContext: artifacts.hasContext,
       hasPlan: artifacts.hasPlan,
     });
-    return {
-      state: refreshed,
-      messages: [
-        {
-          type: "refresh",
-          text: `refreshed: phase=${persisted.currentPhase} context=${
-            artifacts.hasContext ? "yes" : "no"
-          } plan=${artifacts.hasPlan ? "yes" : "no"}`,
-        },
-      ],
-    };
+    const messages: ChatRuntimeMessage[] = [
+      {
+        type: "refresh",
+        text: `refreshed: phase=${persisted.currentPhase} context=${
+          artifacts.hasContext ? "yes" : "no"
+        } plan=${artifacts.hasPlan ? "yes" : "no"}`,
+      },
+    ];
+    // /refresh only swaps currentPhase / hasContext / hasPlan. The
+    // autopilot loop owns its own phase pointer in state.run.phase
+    // and keeps using that for the next /gate, so an external edit
+    // that moved STATE.md.currentPhase won't reroute the loop. Tell
+    // the user up front instead of letting them discover the
+    // mismatch from a /status that disagrees with the gate target.
+    if (state.autopilot) {
+      messages.push({
+        type: "refresh",
+        text: "warning: autopilot is in flight; the loop continues to use its in-memory phase regardless of STATE.md changes",
+      });
+    }
+    return { state: refreshed, messages };
   }
 
   if (command.type === "help") {
