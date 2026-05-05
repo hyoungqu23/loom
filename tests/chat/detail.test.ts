@@ -127,25 +127,25 @@ describe("chat/detail builders", () => {
 });
 
 describe("chat/controller detail integration", () => {
-  it("updates state.detail with phase content after a phase run", async () => {
+  it("updates snapshot.detail with phase content after a phase run", async () => {
     const sessionDir = createPhaseSession("detail integration");
-    const state = createInitialChatState({
-      sessionDir,
-      feature: "detail-integration",
-      currentPhase: "discuss",
-    });
+    const snapshot = {
+      state: createInitialChatState({
+        sessionDir,
+        feature: "detail-integration",
+        currentPhase: "discuss" as const,
+      }),
+      transcript: [],
+      detail: "",
+    };
 
     let result;
     await captureConsole([], async () => {
-      result = await handleChatInput(
-        state,
-        [],
-        "/phase discuss clarify scope",
-      );
+      result = await handleChatInput(snapshot, "/phase discuss clarify scope");
     });
 
-    expect(result?.state.detail).not.toBe("");
-    expect(result?.state.detail).toContain("discuss");
+    expect(result?.detail).not.toBe("");
+    expect(result?.detail).toContain("discuss");
   });
 
   it("prefers synthesis.md when it has real content", async () => {
@@ -189,34 +189,32 @@ describe("chat/controller detail integration", () => {
       ...state,
       options: { ...state.options, synthesize: false },
     };
+    const snapshot = { state, transcript: [], detail: "" };
 
     let result;
     await captureConsole([], async () => {
-      result = await handleChatInput(
-        state,
-        [],
-        "/phase discuss clarify scope",
-      );
+      result = await handleChatInput(snapshot, "/phase discuss clarify scope");
     });
 
-    expect(result?.state.detail).toContain(
+    expect(result?.detail).toContain(
       "# workers — discuss (synthesis missing)",
     );
-    expect(result?.state.detail).toContain("- ryze status=0");
+    expect(result?.detail).toContain("- ryze status=0");
   });
 
-  it("leaves state.detail untouched for non-phase commands", async () => {
+  it("leaves snapshot.detail untouched for non-phase commands", async () => {
     const sessionDir = createPhaseSession("detail noop");
-    const state = {
-      ...createInitialChatState({
+    const snapshot = {
+      state: createInitialChatState({
         sessionDir,
         feature: "detail-noop",
-        currentPhase: "discuss",
+        currentPhase: "discuss" as const,
       }),
+      transcript: [],
       detail: "previous detail",
     };
 
-    const result = await handleChatInput(state, [], "/secondary on");
-    expect(result.state.detail).toBe("previous detail");
+    const result = await handleChatInput(snapshot, "/secondary on");
+    expect(result.detail).toBe("previous detail");
   });
 });

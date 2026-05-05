@@ -36,6 +36,13 @@ export type ChatCommandExecution = {
   state: ChatState;
   messages: ChatRuntimeMessage[];
   phaseResult?: PhaseRunResult;
+  /**
+   * Explicit detail-panel update produced by the command (currently
+   * only `/open <target>`). When unset the controller falls back to
+   * deriving detail from `phaseResult` (synthesis-first) or carries
+   * the previous detail forward unchanged.
+   */
+  detail?: string;
 };
 
 export type ChatRuntimeOptions = {
@@ -373,8 +380,9 @@ export async function executeChatCommand(
       detail = openWorkersIndex(state.sessionDir);
     }
     return {
-      state: chatReducer(state, { type: "set-detail", detail }),
+      state,
       messages: [{ type: "open", text: `opened ${command.target}` }],
+      detail,
     };
   }
 

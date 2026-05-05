@@ -1,25 +1,22 @@
 import * as React from "react";
 import { useApp, useInput } from "ink";
 import { ChatApp } from "./App.js";
-import { ChatState } from "./state.js";
 import { handleChatInput, ChatInputResult } from "./controller.js";
-import { Transcript, TranscriptMessage } from "./transcript.js";
+import {
+  ChatSnapshot,
+  Transcript,
+  TranscriptMessage,
+} from "./transcript.js";
 
 const DEFAULT_DETAIL_PLACEHOLDER =
   "Synthesis will appear here after a phase run.";
 
 type ChatInputFn = (
-  state: ChatState,
-  transcript: Transcript,
+  snapshot: ChatSnapshot,
   input: string,
   opts?: { onTranscript?: (transcript: Transcript) => void },
 ) => Promise<ChatInputResult>;
 
-/**
- * Normalised keyboard event accepted by `dispatchChatKey`. Mirrors the
- * subset of Ink's `Key` shape we actually act on so the dispatcher
- * stays decoupled from the Ink runtime and is unit-testable.
- */
 export type ChatKeyEvent = {
   char: string;
   return?: boolean;
@@ -67,16 +64,13 @@ export function dispatchChatKey(
 }
 
 /**
- * Reducer-managed UI state for InteractiveChat. Pulling the four
- * pieces (chatState, transcript, input, busy) into a single reducer
- * means the controller round-trip applies as ONE state transition and
- * neighbours never observe a half-updated snapshot. This also lets
- * useInput's callback close over a stable `dispatch` reference rather
- * than the ever-changing setX trio.
+ * Reducer-managed UI state for InteractiveChat. The domain (state +
+ * transcript + detail) lives inside one ChatSnapshot — the chat
+ * controller swaps that snapshot atomically per round-trip — and the
+ * UI sidecar (input buffer + busy flag) sits next to it.
  */
 export type ChatUIState = {
-  chatState: ChatState;
-  transcript: Transcript;
+  snapshot: ChatSnapshot;
   input: string;
   busy: boolean;
 };
@@ -88,11 +82,7 @@ export type ChatUIAction =
   | { type: "transcript/append"; entry: TranscriptMessage }
   | { type: "transcript/replace"; transcript: Transcript }
   | { type: "submit/start" }
-  | {
-      type: "submit/finish";
-      chatState: ChatState;
-      transcript: Transcript;
-    }
+  | { type: "submit/finish"; snapshot: ChatSnapshot }
   | { type: "submit/error"; entry: TranscriptMessage };
 
 export function chatUIReducer(
@@ -107,30 +97,36 @@ export function chatUIReducer(
     case "input/clear":
       return { ...state, input: "" };
     case "transcript/append":
-      return { ...state, transcript: [...state.transcript, action.entry] };
+      return {
+        ...state,
+        snapshot: {
+          ...state.snapshot,
+          transcript: [...state.snapshot.transcript, action.entry],
+        },
+      };
     case "transcript/replace":
-      return { ...state, transcript: action.transcript };
+      return {
+        ...state,
+        snapshot: { ...state.snapshot, transcript: action.transcript },
+      };
     case "submit/start":
       return { ...state, busy: true };
     case "submit/finish":
-      return {
-        ...state,
-        busy: false,
-        chatState: action.chatState,
-        transcript: action.transcript,
-      };
+      return { ...state, busy: false, snapshot: action.snapshot };
     case "submit/error":
       return {
         ...state,
         busy: false,
-        transcript: [...state.transcript, action.entry],
+        snapshot: {
+          ...state.snapshot,
+          transcript: [...state.snapshot.transcript, action.entry],
+        },
       };
   }
 }
 
 export type InteractiveProps = {
-  initialState: ChatState;
-  initialTranscript?: Transcript;
+  initialSnapshot: ChatSnapshot;
   /** Test override for the controller; defaults to handleChatInput. */
   handleInput?: ChatInputFn;
   /**
@@ -148,16 +144,11 @@ export function InteractiveChat(
   const onExit = props.onExit ?? (() => ink.exit());
 
   const [ui, dispatch] = React.useReducer(chatUIReducer, undefined, () => ({
-    chatState: props.initialState,
-    transcript: props.initialTranscript ?? [],
+    snapshot: props.initialSnapshot,
     input: "",
     busy: false,
   }));
 
-  // Mirror the latest UI snapshot into a ref so submit() / useInput
-  // callbacks can read fresh values without listing every field in
-  // their dependency arrays. Keeps the callbacks themselves stable
-  // across renders.
   const uiRef = React.useRef(ui);
   uiRef.current = ui;
   const handleRef = React.useRef(handle);
@@ -176,20 +167,11 @@ export function InteractiveChat(
     }
     dispatch({ type: "submit/start" });
     try {
-      const result = await handleRef.current(
-        uiRef.current.chatState,
-        uiRef.current.transcript,
-        text,
-        {
-          onTranscript: (live) =>
-            dispatch({ type: "transcript/replace", transcript: live }),
-        },
-      );
-      dispatch({
-        type: "submit/finish",
-        chatState: result.state,
-        transcript: result.transcript,
+      const result = await handleRef.current(uiRef.current.snapshot, text, {
+        onTranscript: (live) =>
+          dispatch({ type: "transcript/replace", transcript: live }),
       });
+      dispatch({ type: "submit/finish", snapshot: result });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : String(error);
@@ -225,10 +207,10 @@ export function InteractiveChat(
     );
   });
 
-  const detail = ui.chatState.detail || DEFAULT_DETAIL_PLACEHOLDER;
+  const detail = ui.snapshot.detail || DEFAULT_DETAIL_PLACEHOLDER;
   return React.createElement(ChatApp, {
-    state: ui.chatState,
-    messages: ui.transcript,
+    state: ui.snapshot.state,
+    messages: ui.snapshot.transcript,
     detail,
     input: ui.input,
   });

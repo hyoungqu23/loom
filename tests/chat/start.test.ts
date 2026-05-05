@@ -39,11 +39,12 @@ describe("chat/start", () => {
 
     expect(render).toHaveBeenCalledTimes(1);
     const [element] = render.mock.calls[0];
-    expect(element.props.initialState.feature).toBe("alpha");
-    expect(element.props.initialTranscript[0]).toEqual({
+    expect(element.props.initialSnapshot.state.feature).toBe("alpha");
+    expect(element.props.initialSnapshot.transcript[0]).toEqual({
       type: "system",
       text: "session opened: alpha",
     });
+    expect(element.props.initialSnapshot.detail).toBe("");
   });
 
   it("creates a missing explicit session before rendering", async () => {
@@ -62,8 +63,8 @@ describe("chat/start", () => {
     });
 
     const [element] = render.mock.calls[0];
-    expect(element.props.initialState.feature).toBe("new-feature");
-    expect(element.props.initialTranscript[0].text).toBe(
+    expect(element.props.initialSnapshot.state.feature).toBe("new-feature");
+    expect(element.props.initialSnapshot.transcript[0].text).toBe(
       "session created: new-feature",
     );
   });

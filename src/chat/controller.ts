@@ -1,40 +1,50 @@
 import { parseChatInput } from "./commands.js";
 import { executeChatCommand } from "./runtime.js";
-import { ChatState, chatReducer } from "./state.js";
 import { buildPhaseDetail } from "./detail.js";
 import {
   appendParsedInputToTranscript,
   appendRuntimeMessagesToTranscript,
+  ChatSnapshot,
   Transcript,
   TranscriptMessage,
 } from "./transcript.js";
 
-export type ChatInputResult = {
-  state: ChatState;
-  transcript: Transcript;
-};
+/** Result of a single chat input round-trip. Same shape as ChatSnapshot. */
+export type ChatInputResult = ChatSnapshot;
 
 export type ChatInputOptions = {
   onTranscript?: (transcript: Transcript) => void;
 };
 
+/**
+ * Pure controller: takes a snapshot + a single user input line and
+ * returns the next snapshot. Errors thrown by executeChatCommand are
+ * captured into the transcript so the chat session keeps going.
+ *
+ * The detail panel is updated in priority order:
+ *   1. explicit `execution.detail` (`/open <target>`),
+ *   2. derived from `phaseResult` via buildPhaseDetail (synthesis-first),
+ *   3. carried forward unchanged from the input snapshot.
+ */
 export async function handleChatInput(
-  state: ChatState,
-  transcript: Transcript,
+  snapshot: ChatSnapshot,
   input: string,
   opts: ChatInputOptions = {},
 ): Promise<ChatInputResult> {
   const parsed = parseChatInput(input);
-  let liveTranscript = appendParsedInputToTranscript(transcript, parsed);
+  let liveTranscript = appendParsedInputToTranscript(
+    snapshot.transcript,
+    parsed,
+  );
 
   if (parsed.kind !== "command") {
-    return { state, transcript: liveTranscript };
+    return { ...snapshot, transcript: liveTranscript };
   }
 
   let execution;
   try {
     execution = await executeChatCommand(
-      state,
+      snapshot.state,
       parsed.command,
       opts.onTranscript
         ? {
@@ -48,10 +58,6 @@ export async function handleChatInput(
         : {},
     );
   } catch (error) {
-    // Convert any thrown runtime error (spawn failure, runtime
-    // misconfigured, etc.) into an in-transcript error message so the
-    // chat session can keep going. State is left untouched on failure
-    // so the user can retry without losing prior progress.
     const message = error instanceof Error ? error.message : String(error);
     const errored: TranscriptMessage = {
       type: "error",
@@ -59,25 +65,25 @@ export async function handleChatInput(
     };
     const updated = [...liveTranscript, errored];
     if (opts.onTranscript) opts.onTranscript(updated);
-    return { state, transcript: updated };
+    return { ...snapshot, transcript: updated };
   }
-  let nextState = execution.state;
-  if (execution.phaseResult) {
-    const detail = buildPhaseDetail(
-      nextState.sessionDir,
+
+  let nextDetail = snapshot.detail;
+  if (execution.detail !== undefined) {
+    nextDetail = execution.detail;
+  } else if (execution.phaseResult) {
+    nextDetail = buildPhaseDetail(
+      execution.state.sessionDir,
       execution.phaseResult.phase,
       execution.phaseResult.workers,
     );
-    nextState = chatReducer(nextState, { type: "set-detail", detail });
   }
+
   return {
-    state: nextState,
-    transcript:
-      opts.onTranscript
-        ? liveTranscript
-        : appendRuntimeMessagesToTranscript(
-            liveTranscript,
-            execution.messages,
-          ),
+    state: execution.state,
+    transcript: opts.onTranscript
+      ? liveTranscript
+      : appendRuntimeMessagesToTranscript(liveTranscript, execution.messages),
+    detail: nextDetail,
   };
 }

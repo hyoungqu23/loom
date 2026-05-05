@@ -29,12 +29,6 @@ export type ChatState = {
     phase: LoomPhase;
   };
   autopilot: AutopilotContext | null;
-  /**
-   * Cached content of the detail panel. Empty string means the panel
-   * has not been populated yet; the caller may fall back to a
-   * placeholder ("Synthesis will appear here after a phase run.").
-   */
-  detail: string;
 };
 
 export type CreateInitialChatStateInput = {
@@ -53,8 +47,7 @@ export type ChatAction =
   | { type: "gate-wait"; phase: LoomPhase }
   | { type: "run-finish"; phase: LoomPhase }
   | { type: "autopilot-start"; task: string; endPhase: LoomPhase }
-  | { type: "autopilot-stop" }
-  | { type: "set-detail"; detail: string };
+  | { type: "autopilot-stop" };
 
 export function createInitialChatState(
   input: CreateInitialChatStateInput,
@@ -72,7 +65,6 @@ export function createInitialChatState(
     },
     run: { status: "idle" },
     autopilot: null,
-    detail: "",
   };
 }
 
@@ -113,8 +105,6 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       };
     case "autopilot-stop":
       return { ...state, autopilot: null };
-    case "set-detail":
-      return { ...state, detail: action.detail };
   }
 }
 

@@ -5,11 +5,10 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { saveWorkspaceConfig, clearDefaultsCache } from "../../src/config.js";
 import { handleChatInput } from "../../src/chat/controller.js";
 import {
-  ChatState,
   chatReducer,
   createInitialChatState,
 } from "../../src/chat/state.js";
-import { Transcript } from "../../src/chat/transcript.js";
+import { ChatSnapshot } from "../../src/chat/transcript.js";
 import {
   createPhaseSession,
   loadState,
@@ -47,72 +46,74 @@ afterEach(() => {
 });
 
 async function feed(
-  state: ChatState,
-  transcript: Transcript,
+  snapshot: ChatSnapshot,
   input: string,
-): Promise<{ state: ChatState; transcript: Transcript }> {
-  let result;
+): Promise<ChatSnapshot> {
+  let result: ChatSnapshot | undefined;
   await captureConsole([], async () => {
-    result = await handleChatInput(state, transcript, input);
+    result = await handleChatInput(snapshot, input);
   });
-  return { state: result!.state, transcript: result!.transcript };
+  return result!;
 }
 
 describe("chat end-to-end smoke", () => {
   it("walks /phase + manual /gate + /autopilot + /gate proceed/abort against a real session", async () => {
     const sessionDir = createPhaseSession("smoke run");
-    let state = createInitialChatState({
-      sessionDir,
-      feature: "smoke-run",
-      currentPhase: "discuss",
-    });
-    state = chatReducer(state, { type: "set-synthesize", enabled: false });
-    let transcript: Transcript = [];
+    let snapshot: ChatSnapshot = {
+      state: chatReducer(
+        createInitialChatState({
+          sessionDir,
+          feature: "smoke-run",
+          currentPhase: "discuss",
+        }),
+        { type: "set-synthesize", enabled: false },
+      ),
+      transcript: [],
+      detail: "",
+    };
 
     // 1. Single phase, no auto-gate.
-    ({ state, transcript } = await feed(
-      state,
-      transcript,
-      "/phase discuss clarify scope",
-    ));
-    expect(state.run).toEqual({ status: "idle" });
-    expect(state.autopilot).toBe(null);
-    expect(transcript.some((m) => m.text.includes("phase finished: discuss"))).toBe(
-      true,
-    );
+    snapshot = await feed(snapshot, "/phase discuss clarify scope");
+    expect(snapshot.state.run).toEqual({ status: "idle" });
+    expect(snapshot.state.autopilot).toBe(null);
+    expect(
+      snapshot.transcript.some((m) =>
+        m.text.includes("phase finished: discuss"),
+      ),
+    ).toBe(true);
 
     // The detail panel should have updated to reflect discuss.
-    expect(state.detail).toContain("discuss");
+    expect(snapshot.detail).toContain("discuss");
 
     // 2. Manual gate on the completed phase.
-    ({ state, transcript } = await feed(state, transcript, "/gate proceed"));
-    expect(transcript.some((m) => m.text.startsWith("gate recorded: discuss -> proceed"))).toBe(
-      true,
-    );
+    snapshot = await feed(snapshot, "/gate proceed");
+    expect(
+      snapshot.transcript.some((m) =>
+        m.text.startsWith("gate recorded: discuss -> proceed"),
+      ),
+    ).toBe(true);
 
     // 3. Start autopilot — first phase runs and we land in waiting-for-gate.
-    ({ state, transcript } = await feed(
-      state,
-      transcript,
-      "/autopilot ship the feature",
-    ));
-    expect(state.autopilot).not.toBe(null);
-    expect(state.run).toEqual({
+    snapshot = await feed(snapshot, "/autopilot ship the feature");
+    expect(snapshot.state.autopilot).not.toBe(null);
+    expect(snapshot.state.run).toEqual({
       status: "waiting-for-gate",
       phase: "discuss",
     });
 
     // 4. /gate proceed advances autopilot to the next phase.
-    ({ state, transcript } = await feed(state, transcript, "/gate proceed"));
-    expect(state.run).toEqual({
+    snapshot = await feed(snapshot, "/gate proceed");
+    expect(snapshot.state.run).toEqual({
       status: "waiting-for-gate",
       phase: "plan",
     });
 
     // 5. /gate abort stops autopilot and leaves the user at the input line.
-    ({ state, transcript } = await feed(state, transcript, "/gate abort"));
-    expect(state.autopilot).toBe(null);
-    expect(transcript.some((m) => m.text === "autopilot aborted")).toBe(true);
+    snapshot = await feed(snapshot, "/gate abort");
+    expect(snapshot.state.autopilot).toBe(null);
+    expect(
+      snapshot.transcript.some((m) => m.text === "autopilot aborted"),
+    ).toBe(true);
 
     // STATE.md should now carry every gate decision in order.
     const persisted = loadState(sessionDir);
@@ -122,28 +123,35 @@ describe("chat end-to-end smoke", () => {
 
   it("recovers from a runtime failure mid-session and keeps the transcript live", async () => {
     const sessionDir = createPhaseSession("smoke recovery");
-    let state = createInitialChatState({
-      sessionDir,
-      feature: "smoke-recovery",
-      currentPhase: "discuss",
-    });
-    let transcript: Transcript = [];
+    const goodSnapshot: ChatSnapshot = {
+      state: createInitialChatState({
+        sessionDir,
+        feature: "smoke-recovery",
+        currentPhase: "discuss",
+      }),
+      transcript: [],
+      detail: "",
+    };
 
     // /gate against a bogus sessionDir → the controller's catch
     // converts the thrown error into a transcript entry.
-    const broken = { ...state, sessionDir: "/nonexistent/loom-smoke" };
-    let bad;
+    const brokenSnapshot: ChatSnapshot = {
+      ...goodSnapshot,
+      state: { ...goodSnapshot.state, sessionDir: "/nonexistent/loom-smoke" },
+    };
+    let bad: ChatSnapshot | undefined;
     await captureConsole([], async () => {
-      bad = await handleChatInput(broken, transcript, "/gate proceed");
+      bad = await handleChatInput(brokenSnapshot, "/gate proceed");
     });
-    transcript = bad!.transcript;
-    expect(bad!.state).toBe(broken);
-    expect(transcript.some((m) => m.type === "error")).toBe(true);
+    expect(bad!.state).toBe(brokenSnapshot.state);
+    expect(bad!.transcript.some((m) => m.type === "error")).toBe(true);
 
     // The original good state still works for the next command.
-    ({ state, transcript } = await feed(state, transcript, "/status"));
-    expect(transcript.some((m) => m.text.includes("feature=smoke-recovery"))).toBe(
-      true,
-    );
+    const recovered = await feed(goodSnapshot, "/status");
+    expect(
+      recovered.transcript.some((m) =>
+        m.text.includes("feature=smoke-recovery"),
+      ),
+    ).toBe(true);
   });
 });

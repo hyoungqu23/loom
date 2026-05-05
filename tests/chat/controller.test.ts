@@ -5,6 +5,7 @@ import * as path from "path";
 import { clearDefaultsCache, saveWorkspaceConfig } from "../../src/config.js";
 import { handleChatInput } from "../../src/chat/controller.js";
 import { createInitialChatState } from "../../src/chat/state.js";
+import { ChatSnapshot } from "../../src/chat/transcript.js";
 import { createPhaseSession } from "../../src/phases/session.js";
 import {
   ensureWorkspaceState,
@@ -38,18 +39,26 @@ afterEach(() => {
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 
+function snap(sessionDir: string, feature: string): ChatSnapshot {
+  return {
+    state: createInitialChatState({
+      sessionDir,
+      feature,
+      currentPhase: "discuss",
+    }),
+    transcript: [],
+    detail: "",
+  };
+}
+
 describe("chat/controller", () => {
   it("records malformed commands as transcript errors without changing state", async () => {
     const sessionDir = createPhaseSession("controller");
-    const state = createInitialChatState({
-      sessionDir,
-      feature: "controller",
-      currentPhase: "discuss",
-    });
+    const snapshot = snap(sessionDir, "controller");
 
-    const result = await handleChatInput(state, [], "/wat");
+    const result = await handleChatInput(snapshot, "/wat");
 
-    expect(result.state).toBe(state);
+    expect(result.state).toBe(snapshot.state);
     expect(result.transcript).toEqual([
       { type: "error", text: "unknown command: wat" },
     ]);
@@ -57,15 +66,11 @@ describe("chat/controller", () => {
 
   it("records plain input without executing a runtime command", async () => {
     const sessionDir = createPhaseSession("plain");
-    const state = createInitialChatState({
-      sessionDir,
-      feature: "plain",
-      currentPhase: "discuss",
-    });
+    const snapshot = snap(sessionDir, "plain");
 
-    const result = await handleChatInput(state, [], "please clarify scope");
+    const result = await handleChatInput(snapshot, "please clarify scope");
 
-    expect(result.state).toBe(state);
+    expect(result.state).toBe(snapshot.state);
     expect(result.transcript).toEqual([
       { type: "user", text: "please clarify scope" },
     ]);
@@ -73,19 +78,11 @@ describe("chat/controller", () => {
 
   it("appends user input and runtime lifecycle messages for phase commands", async () => {
     const sessionDir = createPhaseSession("phase command");
-    const state = createInitialChatState({
-      sessionDir,
-      feature: "phase-command",
-      currentPhase: "discuss",
-    });
+    const snapshot = snap(sessionDir, "phase-command");
 
     let result;
     await captureConsole([], async () => {
-      result = await handleChatInput(
-        state,
-        [],
-        "/phase discuss clarify scope",
-      );
+      result = await handleChatInput(snapshot, "/phase discuss clarify scope");
     });
 
     expect(result?.state.run).toEqual({ status: "idle" });
@@ -101,21 +98,20 @@ describe("chat/controller", () => {
 
   it("converts thrown runtime errors into transcript error messages without losing state", async () => {
     const sessionDir = createPhaseSession("controller error");
-    const validState = createInitialChatState({
-      sessionDir,
-      feature: "controller-error",
-      currentPhase: "discuss",
-    });
+    const validSnapshot = snap(sessionDir, "controller-error");
     // recordPhaseGate calls loadState which throws when STATE.md is
     // missing — pointing the chat state at a bogus path is the most
     // direct way to simulate a runtime failure surfacing through
     // executeChatCommand.
-    const brokenState = { ...validState, sessionDir: "/nonexistent/loom-path" };
+    const brokenSnapshot: ChatSnapshot = {
+      ...validSnapshot,
+      state: { ...validSnapshot.state, sessionDir: "/nonexistent/loom-path" },
+    };
 
-    const result = await handleChatInput(brokenState, [], "/gate proceed");
+    const result = await handleChatInput(brokenSnapshot, "/gate proceed");
 
     // State is preserved on error so the user can retry.
-    expect(result.state).toBe(brokenState);
+    expect(result.state).toBe(brokenSnapshot.state);
     expect(result.transcript).toEqual([
       { type: "user", text: "/gate proceed" },
       expect.objectContaining({
@@ -127,15 +123,11 @@ describe("chat/controller", () => {
 
   it("reports live progress transcript updates while a phase command runs", async () => {
     const sessionDir = createPhaseSession("progress command");
-    const state = createInitialChatState({
-      sessionDir,
-      feature: "progress-command",
-      currentPhase: "discuss",
-    });
+    const snapshot = snap(sessionDir, "progress-command");
     const live: string[] = [];
 
     await captureConsole([], async () => {
-      await handleChatInput(state, [], "/phase discuss clarify scope", {
+      await handleChatInput(snapshot, "/phase discuss clarify scope", {
         onTranscript: (transcript) => {
           live.push(transcript[transcript.length - 1]?.text || "");
         },

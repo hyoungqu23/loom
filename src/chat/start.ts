@@ -4,7 +4,7 @@ import { loadInkModules, InkModules } from "./ink.js";
 import { createInitialChatState } from "./state.js";
 import { resolveChatSession } from "./session.js";
 import { loadState } from "../phases/session.js";
-import { TranscriptMessage } from "./transcript.js";
+import { ChatSnapshot, TranscriptMessage } from "./transcript.js";
 
 export type StartChatOptions = {
   feature?: string;
@@ -35,11 +35,15 @@ export async function startChat(opts: StartChatOptions = {}): Promise<void> {
   const initialTranscript: TranscriptMessage[] = [
     { type: "system", text: messageText },
   ];
+  const initialSnapshot: ChatSnapshot = {
+    state: chatState,
+    transcript: initialTranscript,
+    detail: "",
+  };
 
   modules.render(
     modules.React.createElement(InteractiveChat, {
-      initialState: chatState,
-      initialTranscript,
+      initialSnapshot,
     }),
   );
 }

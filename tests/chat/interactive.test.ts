@@ -84,12 +84,15 @@ describe("dispatchChatKey", () => {
 describe("chatUIReducer", () => {
   function seed(): ChatUIState {
     return {
-      chatState: createInitialChatState({
-        sessionDir: "/tmp/x",
-        feature: "x",
-        currentPhase: "discuss",
-      }),
-      transcript: [],
+      snapshot: {
+        state: createInitialChatState({
+          sessionDir: "/tmp/x",
+          feature: "x",
+          currentPhase: "discuss",
+        }),
+        transcript: [],
+        detail: "",
+      },
       input: "",
       busy: false,
     };
@@ -119,49 +122,56 @@ describe("chatUIReducer", () => {
     expect(s.input).toBe("");
   });
 
-  it("transcript/append adds an entry to the end", () => {
+  it("transcript/append adds an entry to snapshot.transcript", () => {
     const s = chatUIReducer(seed(), {
       type: "transcript/append",
       entry: { type: "system", text: "hi" },
     });
-    expect(s.transcript).toEqual([{ type: "system", text: "hi" }]);
+    expect(s.snapshot.transcript).toEqual([{ type: "system", text: "hi" }]);
   });
 
-  it("transcript/replace swaps the whole transcript (used by live progress)", () => {
+  it("transcript/replace swaps snapshot.transcript (used by live progress)", () => {
+    const base = seed();
     const s = chatUIReducer(
-      { ...seed(), transcript: [{ type: "user", text: "old" }] },
+      {
+        ...base,
+        snapshot: {
+          ...base.snapshot,
+          transcript: [{ type: "user", text: "old" }],
+        },
+      },
       {
         type: "transcript/replace",
         transcript: [{ type: "system", text: "new" }],
       },
     );
-    expect(s.transcript).toEqual([{ type: "system", text: "new" }]);
+    expect(s.snapshot.transcript).toEqual([{ type: "system", text: "new" }]);
   });
 
-  it("submit/start flips busy on; submit/finish applies state and transcript atomically", () => {
+  it("submit/start flips busy on; submit/finish swaps the whole snapshot atomically", () => {
     let s = seed();
     s = chatUIReducer(s, { type: "submit/start" });
     expect(s.busy).toBe(true);
 
-    const nextState = { ...s.chatState, currentPhase: "plan" as const };
-    s = chatUIReducer(s, {
-      type: "submit/finish",
-      chatState: nextState,
-      transcript: [{ type: "system", text: "done" }],
-    });
+    const nextSnapshot = {
+      state: { ...s.snapshot.state, currentPhase: "plan" as const },
+      transcript: [{ type: "system" as const, text: "done" }],
+      detail: "# synthesis — plan",
+    };
+    s = chatUIReducer(s, { type: "submit/finish", snapshot: nextSnapshot });
     expect(s.busy).toBe(false);
-    expect(s.chatState).toBe(nextState);
-    expect(s.transcript).toEqual([{ type: "system", text: "done" }]);
+    expect(s.snapshot).toBe(nextSnapshot);
   });
 
-  it("submit/error clears busy and records the error entry", () => {
+  it("submit/error clears busy and appends the error entry to snapshot.transcript", () => {
     let s = chatUIReducer(seed(), { type: "submit/start" });
     s = chatUIReducer(s, {
       type: "submit/error",
       entry: { type: "error", text: "chat error: boom" },
     });
     expect(s.busy).toBe(false);
-    expect(s.transcript[s.transcript.length - 1]).toEqual({
+    const transcript = s.snapshot.transcript;
+    expect(transcript[transcript.length - 1]).toEqual({
       type: "error",
       text: "chat error: boom",
     });
@@ -170,17 +180,18 @@ describe("chatUIReducer", () => {
 
 describe("InteractiveChat render", () => {
   it("renders the chat workspace with initial transcript and empty input line", () => {
-    const initialState = createInitialChatState({
-      sessionDir: "/tmp/session",
-      feature: "alpha",
-      currentPhase: "discuss",
-    });
+    const initialSnapshot = {
+      state: createInitialChatState({
+        sessionDir: "/tmp/session",
+        feature: "alpha",
+        currentPhase: "discuss" as const,
+      }),
+      transcript: [{ type: "system" as const, text: "session opened: alpha" }],
+      detail: "",
+    };
     const { lastFrame } = render(
       React.createElement(InteractiveChat, {
-        initialState,
-        initialTranscript: [
-          { type: "system", text: "session opened: alpha" },
-        ],
+        initialSnapshot,
         handleInput: vi.fn(),
         onExit: vi.fn(),
       }),
@@ -196,19 +207,19 @@ describe("InteractiveChat render", () => {
     );
   });
 
-  it("falls back to state.detail once it has been populated", () => {
-    const initialState = {
-      ...createInitialChatState({
+  it("falls back to snapshot.detail once it has been populated", () => {
+    const initialSnapshot = {
+      state: createInitialChatState({
         sessionDir: "/tmp/session",
         feature: "alpha",
-        currentPhase: "plan",
+        currentPhase: "plan" as const,
       }),
+      transcript: [],
       detail: "# synthesis — plan\n\nactually populated",
     };
     const { lastFrame } = render(
       React.createElement(InteractiveChat, {
-        initialState,
-        initialTranscript: [],
+        initialSnapshot,
         handleInput: vi.fn(),
         onExit: vi.fn(),
       }),

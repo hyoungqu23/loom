@@ -197,8 +197,8 @@ describe("chat/runtime", () => {
       target: "context",
     });
 
-    expect(result.state.detail).toContain("# CONTEXT.md");
-    expect(result.state.detail).toContain("refund SLA");
+    expect(result.detail).toContain("# CONTEXT.md");
+    expect(result.detail).toContain("refund SLA");
     expect(result.messages).toEqual([
       { type: "open", text: "opened context" },
     ]);
@@ -217,8 +217,8 @@ describe("chat/runtime", () => {
       target: "synthesis",
     });
 
-    expect(result.state.detail).toContain("# synthesis — plan");
-    expect(result.state.detail).toContain("(missing");
+    expect(result.detail).toContain("# synthesis — plan");
+    expect(result.detail).toContain("(missing");
   });
 
   it("/open workers lists per-phase files without embedding their content", async () => {
@@ -237,9 +237,9 @@ describe("chat/runtime", () => {
       target: "workers",
     });
 
-    expect(result.state.detail).toContain("# workers index");
-    expect(result.state.detail).toContain("- ryze.md");
-    expect(result.state.detail).not.toContain("long content body");
+    expect(result.detail).toContain("# workers index");
+    expect(result.detail).toContain("- ryze.md");
+    expect(result.detail).not.toContain("long content body");
   });
 
   it("emits live worker and synthesis progress messages during a phase run", async () => {

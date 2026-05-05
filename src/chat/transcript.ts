@@ -1,5 +1,6 @@
 import { ChatParseResult } from "./commands.js";
 import { ChatRuntimeMessage } from "./runtime.js";
+import type { ChatState } from "./state.js";
 
 export type TranscriptMessage = {
   type: "user" | "system" | "error" | "gate";
@@ -7,6 +8,19 @@ export type TranscriptMessage = {
 };
 
 export type Transcript = TranscriptMessage[];
+
+/**
+ * Single unit-of-truth carried in and out of the chat controller and
+ * stored in the InteractiveChat reducer. Pulling state, transcript,
+ * and the detail panel into one snapshot means callers can't observe
+ * a partial update — every controller round-trip swaps all three
+ * atomically.
+ */
+export type ChatSnapshot = {
+  state: ChatState;
+  transcript: Transcript;
+  detail: string;
+};
 
 export function createTranscript(): Transcript {
   return [];
