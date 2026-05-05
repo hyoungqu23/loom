@@ -87,16 +87,50 @@ export function appendParsedInputToTranscript(
   ]);
 }
 
+/**
+ * Convert a runtime message into the transcript shape. The switch is
+ * exhaustive on ChatRuntimeMessage["type"]: adding a new variant to
+ * that union will produce a TypeScript error here instead of silently
+ * defaulting to a "system" entry. The exhaustiveness assertion at the
+ * bottom enforces the same guarantee at runtime.
+ */
+function runtimeMessageToTranscript(
+  message: ChatRuntimeMessage,
+): TranscriptMessage {
+  switch (message.type) {
+    case "error":
+      return { type: "error", text: message.text };
+    case "gate-wait":
+      return { type: "gate", text: message.text };
+    case "run-start":
+    case "run-finish":
+    case "worker-start":
+    case "worker-progress":
+    case "worker-done":
+    case "synthesis-start":
+    case "gate-recorded":
+    case "autopilot-start":
+    case "autopilot-stop":
+    case "option":
+    case "status":
+    case "refresh":
+    case "open":
+    case "help":
+    case "quit":
+      return { type: "system", text: message.text };
+  }
+  const _exhaustive: never = message;
+  throw new Error(
+    `unhandled chat runtime message: ${JSON.stringify(_exhaustive)}`,
+  );
+}
+
 export function appendRuntimeMessagesToTranscript(
   transcript: Transcript,
   messages: ChatRuntimeMessage[],
 ): Transcript {
   return clampTranscript([
     ...transcript,
-    ...messages.map((message): TranscriptMessage => {
-      if (message.type === "error") return { type: "error", text: message.text };
-      if (message.type === "gate-wait") return { type: "gate", text: message.text };
-      return { type: "system", text: message.text };
-    }),
+    ...messages.map(runtimeMessageToTranscript),
   ]);
 }
