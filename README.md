@@ -41,6 +41,8 @@ feature
 ## Commands
 
 ```bash
+loom                           # bare TTY → opens Chat TUI; non-TTY → prints help
+loom chat [--feature <slug>]
 loom help
 loom init [--cwd <dir>] [--force]
 loom config show [path] | path | set <path> <value>
@@ -57,6 +59,8 @@ loom autopilot "<task>" --feature <slug> [--start <phase>] [--end <phase>]
 
 `--feature` is required for `phase` and `autopilot`. Use `--feature latest` to resume the most recent feature session.
 By default phases run primary personas only. Add `--include-secondary` to run the matrix secondary personas in the same phase pass.
+
+In an interactive terminal, running `loom` with no subcommand opens the Chat TUI: a feature workspace where you chat, run phases via `/phase`, drive autopilot via `/autopilot`, and record gates with `/gate proceed|revise|abort`. Pipe redirects and CI shells fall back to the existing help output so scripts stay compatible.
 
 ## Quick Start
 

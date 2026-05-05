@@ -2,6 +2,10 @@ export function printHelp(): void {
   console.log(`loom — 7-phase agent harness
 
 Usage:
+  loom                         Bare invocation: opens Chat TUI on a TTY; prints
+                               this help when stdout is not a terminal (CI, pipes).
+  loom chat [--feature <slug>] Open the Chat TUI explicitly. Without --feature
+                               resumes the most recently updated session.
   loom help                    Show this help
   loom init [--cwd <dir>] [--force]
   loom config show [path] | path | set <path> <value>
@@ -27,7 +31,23 @@ Workflow:
   .loom/features/<slug>/. Use --feature latest to resume the most recent
   feature session.
 
+Chat slash commands (inside loom chat):
+  /phase <name> [task]   Run a single phase from chat
+  /autopilot <task>      Loop through phases, pausing for /gate after each
+  /gate proceed|revise|abort [note]
+                         Record a gate decision; drives autopilot too
+  /personas a,b          Override personas for future runs
+  /secondary on|off      Include / exclude matrix secondary personas
+  /synthesize on|off     Toggle the twistedfate synthesis pass
+  /open context|plan|workers|synthesis
+                         Preview the named artefact in the detail panel
+  /status                Print the current chat / session snapshot
+  /help                  Show the slash-command list inside the TUI
+  /quit                  Exit the chat session (Ctrl+C also exits when idle)
+
 Examples:
+  loom                                # opens chat in a TTY
+  loom chat --feature billing-v2      # opens chat for a specific feature
   loom init
   loom doctor --smoke
   loom memory list

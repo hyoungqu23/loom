@@ -40,6 +40,35 @@ describe("printHelp", () => {
     expect(buf.join("\n")).toMatch(/loom cron list/);
   });
 
+  it("documents loom chat and the bare-loom TTY behavior", async () => {
+    const buf: string[] = [];
+    await captureConsole(buf, () => printHelp());
+    const text = buf.join("\n");
+    expect(text).toMatch(/loom chat/);
+    expect(text).toMatch(/Chat TUI/);
+    expect(text).toMatch(/TTY/);
+  });
+
+  it("lists the core chat slash commands", async () => {
+    const buf: string[] = [];
+    await captureConsole(buf, () => printHelp());
+    const text = buf.join("\n");
+    for (const slash of [
+      "/phase",
+      "/autopilot",
+      "/gate",
+      "/personas",
+      "/secondary",
+      "/synthesize",
+      "/open",
+      "/status",
+      "/help",
+      "/quit",
+    ]) {
+      expect(text).toContain(slash);
+    }
+  });
+
   it("does not advertise removed v1 commands", async () => {
     const buf: string[] = [];
     await captureConsole(buf, () => printHelp());

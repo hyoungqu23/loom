@@ -56,6 +56,55 @@ LOOM.md                 # 이 프로젝트의 onboarding 가이드
 
 ---
 
+## 0.5 Chat TUI: 인터랙티브 모드
+
+CLI 명령을 다 외우는 대신 채팅 인터페이스로 작업하고 싶다면 `loom chat`을 쓴다.
+인터랙티브 터미널에서 `loom`을 인자 없이 실행해도 같은 화면이 뜬다 — 비-TTY 환경
+(파이프, CI)에서는 기존 help가 나오므로 스크립트 호환성은 유지된다.
+
+```bash
+loom                          # 인터랙티브 TTY → Chat TUI 진입
+loom chat                     # 가장 최근 업데이트된 세션을 자동으로 연다
+loom chat --feature billing-v2  # 명시적으로 특정 feature 세션 열기 (없으면 생성)
+```
+
+### 0.5.1 슬래시 명령
+
+채팅창에서 `/`로 시작하면 명령, 아니면 평문 메모.
+
+| 명령 | 동작 |
+|---|---|
+| `/phase <name> [task]` | 단일 phase 실행. 종료 후 자동 게이트는 묻지 않는다. |
+| `/autopilot <task>` | 현재 phase부터 시작해 phase마다 게이트 입력을 대기하는 루프. |
+| `/gate proceed\|revise\|abort [note]` | 게이트 결정 기록. autopilot 루프도 이걸로 진행/재실행/중단. |
+| `/personas a,b` | 다음 실행부터 페르소나 오버라이드. `/secondary`보다 우선. |
+| `/secondary on\|off` | 매트릭스 secondary 페르소나까지 실행할지. |
+| `/synthesize on\|off` | twistedfate 합성 단계 활성/비활성. |
+| `/open context\|plan\|workers\|synthesis` | detail 패널에 해당 산출물 미리보기. `/open workers`는 파일 목록만 — 콘텐츠는 로드하지 않음. |
+| `/status` | 현재 chat / 세션 상태 한 줄 요약. |
+| `/help` | 슬래시 명령 목록. |
+| `/quit` | 종료. Ctrl+C로도 idle일 때 깔끔하게 빠져나간다. |
+
+### 0.5.2 게이트 동작 차이
+
+- `/phase` — 한 phase만 돌리고 입력 라인으로 즉시 복귀. 사용자가 `/gate`를 명시적으로 입력하기 전까지 STATE.md gates는 갱신되지 않는다.
+- `/autopilot` — 매 phase가 끝나면 `waiting-for-gate` 상태로 멈춰서 `/gate proceed|revise|abort` 입력을 기다린다. `proceed`는 다음 phase, `revise`는 같은 phase 재실행(노트는 다음 워커 프롬프트에 revision hint로 자동 주입), `abort`는 루프 종료.
+
+### 0.5.3 Detail 패널
+
+phase 실행 직후 detail 패널이 자동 갱신된다.
+
+- `workers/<phase>/synthesis.md`가 있으면 그 콘텐츠 우선(최대 4KB).
+- 합성이 비어 있거나 `/synthesize off`라면 워커 stdout 헤드(페르소나당 200B) 요약.
+- `/open <target>`으로 임의의 시점에 다른 산출물을 패널에 띄울 수 있다.
+
+### 0.5.4 취소 / 에러 UX
+
+- Ctrl+C — idle일 때 깔끔히 종료. 실행 중일 때는 "cancel requested" 알림만 transcript에 남기고 현재 워커는 끝까지 돌린다.
+- 런타임 오류(spawn 실패, STATE.md 누락, ollama 프롬프트 한계 초과 등)는 `chat error: <message>` 형태로 transcript에 기록되고 채팅 자체는 살아 있다.
+
+---
+
 ## 1. 첫 feature: 30초 만에 끝내보기
 
 처음이라면 가장 짧은 코스부터:
