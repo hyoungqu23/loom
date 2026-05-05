@@ -42,8 +42,6 @@ export async function startChat(opts: StartChatOptions = {}): Promise<void> {
   };
 
   modules.render(
-    modules.React.createElement(InteractiveChat, {
-      initialSnapshot,
-    }),
+    modules.createElement(InteractiveChat, { initialSnapshot }),
   );
 }

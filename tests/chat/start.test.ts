@@ -28,12 +28,8 @@ describe("chat/start", () => {
     await startChat({
       feature: "alpha",
       loadInk: async () => ({
-        React: {
-          createElement: (type: unknown, props: unknown) => ({ type, props }),
-        },
+        createElement: (type: unknown, props: unknown) => ({ type, props }),
         render,
-        Box: "Box",
-        Text: "Text",
       }),
     });
 
@@ -53,12 +49,8 @@ describe("chat/start", () => {
     await startChat({
       feature: "new feature",
       loadInk: async () => ({
-        React: {
-          createElement: (type: unknown, props: unknown) => ({ type, props }),
-        },
+        createElement: (type: unknown, props: unknown) => ({ type, props }),
         render,
-        Box: "Box",
-        Text: "Text",
       }),
     });
 
