@@ -33,8 +33,11 @@ function commandToText(result: Extract<ChatParseResult, { kind: "command" }>): s
       return `/phase ${command.phase}${command.task ? ` ${command.task}` : ""}`;
     case "autopilot":
       return `/autopilot ${command.task}`.trimEnd();
-    case "gate":
-      return `/gate ${command.decision}${command.note ? ` ${command.note}` : ""}`;
+    case "gate": {
+      const phasePart = command.phase ? ` ${command.phase}` : "";
+      const notePart = command.note ? ` ${command.note}` : "";
+      return `/gate ${command.decision}${phasePart}${notePart}`;
+    }
     case "personas":
       return `/personas ${command.personas.join(",")}`;
     case "secondary":

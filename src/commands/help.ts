@@ -34,8 +34,9 @@ Workflow:
 Chat slash commands (inside loom chat):
   /phase <name> [task]   Run a single phase from chat
   /autopilot <task>      Loop through phases, pausing for /gate after each
-  /gate proceed|revise|abort [note]
-                         Record a gate decision; drives autopilot too
+  /gate proceed|revise|abort [phase] [note]
+                         Record a gate decision (optionally targeting a
+                         specific phase); drives autopilot too
   /personas a,b          Override personas for future runs
   /secondary on|off      Include / exclude matrix secondary personas
   /synthesize on|off     Toggle the twistedfate synthesis pass

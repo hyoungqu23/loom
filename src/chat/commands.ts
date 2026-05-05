@@ -12,7 +12,12 @@ const OPEN_TARGET_SET = new Set<string>([
 export type ChatCommand =
   | { type: "phase"; phase: LoomPhase; task: string }
   | { type: "autopilot"; task: string }
-  | { type: "gate"; decision: GateDecision; note: string }
+  | {
+      type: "gate";
+      decision: GateDecision;
+      phase?: LoomPhase;
+      note: string;
+    }
   | { type: "personas"; personas: string[] }
   | { type: "secondary"; enabled: boolean }
   | { type: "synthesize"; enabled: boolean }
@@ -62,16 +67,27 @@ export function parseChatInput(input: string): ChatParseResult {
   }
 
   if (name === "gate") {
-    const [decisionRaw = "", ...noteParts] = rest.split(/\s+/);
+    const tokens = rest.split(/\s+/).filter(Boolean);
+    const decisionRaw = tokens[0] || "";
     if (!GATE_SET.has(decisionRaw)) {
       return { kind: "error", message: "gate must be proceed, revise, or abort" };
+    }
+    // Optional phase override: /gate <decision> [phase] [...note].
+    // The second token is treated as a phase when it matches a known
+    // LoomPhase; otherwise it falls through into the note.
+    let phase: LoomPhase | undefined;
+    let noteTokens = tokens.slice(1);
+    if (noteTokens[0] && PHASE_SET.has(noteTokens[0])) {
+      phase = noteTokens[0] as LoomPhase;
+      noteTokens = noteTokens.slice(1);
     }
     return {
       kind: "command",
       command: {
         type: "gate",
         decision: decisionRaw as GateDecision,
-        note: noteParts.join(" ").trim(),
+        phase,
+        note: noteTokens.join(" ").trim(),
       },
     };
   }

@@ -128,6 +128,32 @@ describe("chat/runtime", () => {
     });
   });
 
+  it("/gate uses an explicit phase argument when provided, overriding currentPhase", async () => {
+    const sessionDir = createPhaseSession("chat gate explicit");
+    const state = createInitialChatState({
+      sessionDir,
+      feature: "chat-gate-explicit",
+      currentPhase: "build", // memory snapshot says we're at build
+    });
+
+    const result = await executeChatCommand(state, {
+      type: "gate",
+      decision: "proceed",
+      phase: "plan",
+      note: "ratified offline",
+    });
+
+    expect(result.messages[0]).toMatchObject({
+      type: "gate-recorded",
+      text: "gate recorded: plan -> proceed - ratified offline",
+    });
+    expect(loadState(sessionDir).gates[0]).toMatchObject({
+      phase: "plan",
+      decision: "proceed",
+      note: "ratified offline",
+    });
+  });
+
   it("applies option commands to future runtime state", async () => {
     const sessionDir = createPhaseSession("chat runtime options");
     let state = createInitialChatState({

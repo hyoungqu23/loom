@@ -334,10 +334,16 @@ export async function executeChatCommand(
   }
 
   if (command.type === "gate") {
+    // Priority: explicit `/gate <decision> <phase>` arg → the phase
+    // the autopilot loop is parked on → the most recently completed
+    // phase (currentPhase). This mirrors `loom phase --gate <phase>`
+    // on the CLI side: chat callers can override the inference when
+    // the recorded phase matters (audit log, retroactive notes).
     const gatePhase =
-      state.run.status === "waiting-for-gate"
+      command.phase ??
+      (state.run.status === "waiting-for-gate"
         ? state.run.phase
-        : state.currentPhase;
+        : state.currentPhase);
     const record = recordPhaseGate(state.sessionDir, gatePhase, {
       decision: command.decision,
       note: command.note || undefined,

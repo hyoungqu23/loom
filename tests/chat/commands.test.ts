@@ -30,7 +30,45 @@ describe("chat/commands", () => {
     });
     expect(parseChatInput("/gate revise tighten tests")).toEqual({
       kind: "command",
-      command: { type: "gate", decision: "revise", note: "tighten tests" },
+      command: {
+        type: "gate",
+        decision: "revise",
+        phase: undefined,
+        note: "tighten tests",
+      },
+    });
+  });
+
+  it("treats a known phase token as an explicit gate phase override", () => {
+    expect(parseChatInput("/gate proceed plan")).toEqual({
+      kind: "command",
+      command: {
+        type: "gate",
+        decision: "proceed",
+        phase: "plan",
+        note: "",
+      },
+    });
+    expect(parseChatInput("/gate revise plan tighten tests")).toEqual({
+      kind: "command",
+      command: {
+        type: "gate",
+        decision: "revise",
+        phase: "plan",
+        note: "tighten tests",
+      },
+    });
+  });
+
+  it("does not consume the second token as a phase when it is not a phase name", () => {
+    expect(parseChatInput("/gate revise design tweak")).toEqual({
+      kind: "command",
+      command: {
+        type: "gate",
+        decision: "revise",
+        phase: undefined,
+        note: "design tweak",
+      },
     });
   });
 
