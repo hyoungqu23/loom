@@ -1,7 +1,8 @@
 import * as fs from "fs";
+import { writeFileAtomic } from "./atomic-write.js";
 
 export function writeJson(filePath: string, value: object): void {
-  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
+  writeFileAtomic(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 /**

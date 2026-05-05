@@ -18,6 +18,7 @@ import {
   serializeState,
 } from "./serialize.js";
 import { redactText, workerOutputRedactionEnabled } from "../util/redact.js";
+import { writeFileAtomic } from "../util/atomic-write.js";
 
 const STATE_FILE = "STATE.md";
 const CONTEXT_FILE = "CONTEXT.md";
@@ -86,10 +87,9 @@ export function loadState(sessionDir: string): PhaseState {
 
 export function writeState(sessionDir: string, state: PhaseState): void {
   state.updatedAt = nowIso();
-  fs.writeFileSync(
+  writeFileAtomic(
     path.join(sessionDir, STATE_FILE),
     serializeState(state),
-    "utf8",
   );
 }
 
@@ -100,10 +100,9 @@ export function loadContext(sessionDir: string): SessionContext | null {
 }
 
 export function writeContext(sessionDir: string, ctx: SessionContext): void {
-  fs.writeFileSync(
+  writeFileAtomic(
     path.join(sessionDir, CONTEXT_FILE),
     serializeContext(ctx),
-    "utf8",
   );
 }
 
@@ -114,10 +113,9 @@ export function loadPlan(sessionDir: string): PhasePlan | null {
 }
 
 export function writePlan(sessionDir: string, plan: PhasePlan): void {
-  fs.writeFileSync(
+  writeFileAtomic(
     path.join(sessionDir, PLAN_FILE),
     serializePlan(plan),
-    "utf8",
   );
 }
 
