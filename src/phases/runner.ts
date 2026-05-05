@@ -361,6 +361,7 @@ export async function runPhase(
         { phase, handoff },
       );
       const synthDir = path.join(sessionDir, "workers", phase, "synthesis.run");
+      options.hooks?.onSynthesisStart?.(synthRun, synthDir);
       const synth = await runWorkerAsync(synthRun, synthDir, options.hooks ?? {});
       synthesisPath = path.join(sessionDir, "workers", phase, "synthesis.md");
       fs.writeFileSync(synthesisPath, synth.stdout || "");
