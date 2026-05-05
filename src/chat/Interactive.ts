@@ -108,7 +108,12 @@ export function InteractiveChat(
   const submit = React.useCallback(async (): Promise<void> => {
     const text = input;
     setInput("");
-    if (!text.trim()) return;
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    if (trimmed === "/quit") {
+      onExit();
+      return;
+    }
     setBusy(true);
     try {
       const result = await handle(chatState, transcript, text, {
@@ -127,7 +132,7 @@ export function InteractiveChat(
     } finally {
       setBusy(false);
     }
-  }, [chatState, handle, input, transcript]);
+  }, [chatState, handle, input, onExit, transcript]);
 
   useInput((char, key) => {
     dispatchChatKey(

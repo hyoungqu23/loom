@@ -178,6 +178,27 @@ describe("dispatchCli", () => {
     expect(buf.join("\n")).not.toMatch(/Usage:/);
   });
 
+  it("starts Chat TUI for `loom chat` even outside a TTY (explicit subcommand)", async () => {
+    const { deps, chatStarts } = createDeps(false);
+    const buf: string[] = [];
+
+    await captureConsole(buf, () => dispatchCli(["chat"], deps));
+
+    expect(chatStarts).toEqual([{}]);
+    expect(buf.join("\n")).not.toMatch(/Usage:/);
+  });
+
+  it("`help` prints help even when an interactive TTY is available", async () => {
+    const { deps, chatStarts } = createDeps(true);
+    const buf: string[] = [];
+
+    await captureConsole(buf, () => dispatchCli(["help"], deps));
+
+    expect(chatStarts).toEqual([]);
+    expect(buf.join("\n")).toMatch(/Usage:/);
+    expect(buf.join("\n")).toMatch(/loom chat/);
+  });
+
   it("prints help for help commands even in an interactive TTY", async () => {
     const { deps, chatStarts } = createDeps(true);
     const buf: string[] = [];
