@@ -180,6 +180,41 @@ describe("chat/runtime", () => {
     expect(result.messages[0].text).toContain("phase=build");
   });
 
+  it("/help returns a slash-command listing without mutating state", async () => {
+    const sessionDir = createPhaseSession("help cmd");
+    const state = createInitialChatState({
+      sessionDir,
+      feature: "help-cmd",
+      currentPhase: "discuss",
+    });
+
+    const result = await executeChatCommand(state, { type: "help" });
+
+    expect(result.state).toBe(state);
+    expect(result.messages).toHaveLength(1);
+    expect(result.messages[0].type).toBe("help");
+    expect(result.messages[0].text).toContain("/phase");
+    expect(result.messages[0].text).toContain("/autopilot");
+    expect(result.messages[0].text).toContain("/quit");
+  });
+
+  it("/quit returns a quit message without throwing or mutating state", async () => {
+    const sessionDir = createPhaseSession("quit cmd");
+    const state = createInitialChatState({
+      sessionDir,
+      feature: "quit-cmd",
+      currentPhase: "discuss",
+    });
+
+    const result = await executeChatCommand(state, { type: "quit" });
+
+    expect(result.state).toBe(state);
+    expect(result.messages[0]).toMatchObject({
+      type: "quit",
+      text: expect.stringContaining("exit requested"),
+    });
+  });
+
   it("/refresh re-reads STATE.md / CONTEXT.md / PLAN.md from disk", async () => {
     const sessionDir = createPhaseSession("refresh sync");
     const state = createInitialChatState({

@@ -34,6 +34,8 @@ export type ChatRuntimeMessage =
   | { type: "status"; text: string }
   | { type: "refresh"; text: string }
   | { type: "open"; text: string }
+  | { type: "help"; text: string }
+  | { type: "quit"; text: string }
   | { type: "error"; text: string };
 
 export type ChatCommandExecution = {
@@ -58,6 +60,24 @@ function emitProgress(
   message: ChatRuntimeMessage,
 ): void {
   opts.onMessage?.(message);
+}
+
+function chatHelpText(): string {
+  return [
+    "slash commands:",
+    "  /phase <name> [task]            run a single phase",
+    "  /autopilot <task>               loop phases, pause for /gate after each",
+    "  /gate proceed|revise|abort [n]  record a gate decision",
+    "  /personas a,b                   override personas for future runs",
+    "  /secondary on|off               include matrix secondary personas",
+    "  /synthesize on|off              toggle the twistedfate synthesis pass",
+    "  /open context|plan|workers|synthesis",
+    "                                  preview an artefact in the detail panel",
+    "  /status                         print current chat / session snapshot",
+    "  /refresh                        re-read STATE.md / CONTEXT.md / PLAN.md",
+    "  /help                           this list",
+    "  /quit                           exit the chat session",
+  ].join("\n");
 }
 
 function progressToMessage(event: ChatPhaseProgress): ChatRuntimeMessage {
@@ -397,6 +417,20 @@ export async function executeChatCommand(
     };
   }
 
+  if (command.type === "help") {
+    return {
+      state,
+      messages: [{ type: "help", text: chatHelpText() }],
+    };
+  }
+
+  if (command.type === "quit") {
+    return {
+      state,
+      messages: [{ type: "quit", text: "exit requested via /quit" }],
+    };
+  }
+
   if (command.type === "open") {
     let detail: string;
     if (command.target === "context") {
@@ -415,8 +449,10 @@ export async function executeChatCommand(
     };
   }
 
-  return {
-    state,
-    messages: [{ type: "error", text: `unsupported command: ${command.type}` }],
-  };
+  // Exhaustiveness check — every ChatCommand branch returns above. If
+  // a new command is added without a runtime branch, TypeScript flags
+  // this assignment instead of letting an "unsupported" message slip
+  // through silently at runtime.
+  const _exhaustive: never = command;
+  throw new Error(`unreachable chat command: ${JSON.stringify(_exhaustive)}`);
 }
