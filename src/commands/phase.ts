@@ -3,16 +3,14 @@ import {
   GateDecision,
   LoomPhase,
   LOOM_PHASES,
-  PhaseGateRecord,
 } from "../types";
 import { flagBool, flagString } from "../util/parse-args";
 import {
   createPhaseSession,
-  loadState,
   resolvePhaseSession,
-  writeState,
 } from "../phases/session";
 import { runPhase } from "../phases/runner";
+import { recordPhaseGate } from "../phases/gate";
 
 const PHASE_SET = new Set<string>(LOOM_PHASES);
 const GATE_SET = new Set<GateDecision>(["proceed", "revise", "abort"]);
@@ -84,15 +82,7 @@ export async function runPhaseCommand(
     if (!sessionDir) {
       throw new Error(`No session found for feature: ${feature}`);
     }
-    const state = loadState(sessionDir);
-    const record: PhaseGateRecord = {
-      phase,
-      decision: gate,
-      at: new Date().toISOString(),
-    };
-    if (note) record.note = note;
-    state.gates.push(record);
-    writeState(sessionDir, state);
+    recordPhaseGate(sessionDir, phase, { decision: gate, note });
     console.log(
       `[loom] gate recorded: ${phase} → ${gate}${note ? " — " + note : ""}`,
     );

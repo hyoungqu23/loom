@@ -4,17 +4,15 @@ import {
   GateDecision,
   LoomPhase,
   LOOM_PHASES,
-  PhaseGateRecord,
 } from "../types";
 import { flagBool, flagString } from "../util/parse-args";
 import {
   buildHandoff,
   createPhaseSession,
-  loadState,
   resolvePhaseSession,
-  writeState,
 } from "../phases/session";
 import { runPhase } from "../phases/runner";
+import { recordPhaseGate } from "../phases/gate";
 import { inferStartPhase } from "../phases/start-phase";
 import { createGateProvider, createRenderer, type FrameDriver } from "../tui";
 import { detectColorMode, detectFrameEnabled } from "../tui/isTty";
@@ -88,22 +86,6 @@ function resolveGateProvider(
     );
   }
   return defaultInteractiveGate(driver);
-}
-
-function recordGate(
-  sessionDir: string,
-  phase: LoomPhase,
-  outcome: GateOutcome,
-): void {
-  const state = loadState(sessionDir);
-  const record: PhaseGateRecord = {
-    phase,
-    decision: outcome.decision,
-    at: new Date().toISOString(),
-  };
-  if (outcome.note) record.note = outcome.note;
-  state.gates.push(record);
-  writeState(sessionDir, state);
 }
 
 export async function runAutopilot(
@@ -207,7 +189,7 @@ export async function runAutopilot(
         workersCount: result.workers.length,
         synthesisExcerpt,
       });
-      recordGate(sessionDir, phase, outcome);
+      recordPhaseGate(sessionDir, phase, outcome);
 
       if (outcome.decision === "abort") {
         endReason = "abort";
