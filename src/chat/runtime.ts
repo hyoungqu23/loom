@@ -8,6 +8,12 @@ import {
   isAutopilotEnd,
   nextLoomPhase,
 } from "./autopilot";
+import {
+  openContext,
+  openPlan,
+  openSynthesis,
+  openWorkersIndex,
+} from "./files";
 
 export type ChatRuntimeMessage =
   | { type: "run-start"; text: string }
@@ -22,6 +28,7 @@ export type ChatRuntimeMessage =
   | { type: "autopilot-stop"; text: string }
   | { type: "option"; text: string }
   | { type: "status"; text: string }
+  | { type: "open"; text: string }
   | { type: "error"; text: string };
 
 export type ChatCommandExecution = {
@@ -356,6 +363,23 @@ export async function executeChatCommand(
     return {
       state,
       messages: [{ type: "status", text: renderChatStatus(state) }],
+    };
+  }
+
+  if (command.type === "open") {
+    let detail: string;
+    if (command.target === "context") {
+      detail = openContext(state.sessionDir);
+    } else if (command.target === "plan") {
+      detail = openPlan(state.sessionDir);
+    } else if (command.target === "synthesis") {
+      detail = openSynthesis(state.sessionDir, state.currentPhase);
+    } else {
+      detail = openWorkersIndex(state.sessionDir);
+    }
+    return {
+      state: chatReducer(state, { type: "set-detail", detail }),
+      messages: [{ type: "open", text: `opened ${command.target}` }],
     };
   }
 

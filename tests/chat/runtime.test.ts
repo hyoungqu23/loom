@@ -180,6 +180,68 @@ describe("chat/runtime", () => {
     expect(result.messages[0].text).toContain("phase=build");
   });
 
+  it("/open context loads the file into state.detail", async () => {
+    const sessionDir = createPhaseSession("open context");
+    fs.writeFileSync(
+      path.join(sessionDir, "CONTEXT.md"),
+      "## problem\nrefund SLA\n",
+    );
+    const state = createInitialChatState({
+      sessionDir,
+      feature: "open-context",
+      currentPhase: "discuss",
+    });
+
+    const result = await executeChatCommand(state, {
+      type: "open",
+      target: "context",
+    });
+
+    expect(result.state.detail).toContain("# CONTEXT.md");
+    expect(result.state.detail).toContain("refund SLA");
+    expect(result.messages).toEqual([
+      { type: "open", text: "opened context" },
+    ]);
+  });
+
+  it("/open synthesis falls back to a missing-state when phase has none", async () => {
+    const sessionDir = createPhaseSession("open synth missing");
+    const state = createInitialChatState({
+      sessionDir,
+      feature: "open-synth-missing",
+      currentPhase: "plan",
+    });
+
+    const result = await executeChatCommand(state, {
+      type: "open",
+      target: "synthesis",
+    });
+
+    expect(result.state.detail).toContain("# synthesis — plan");
+    expect(result.state.detail).toContain("(missing");
+  });
+
+  it("/open workers lists per-phase files without embedding their content", async () => {
+    const sessionDir = createPhaseSession("open workers");
+    const phaseDir = path.join(sessionDir, "workers", "discuss");
+    fs.mkdirSync(phaseDir, { recursive: true });
+    fs.writeFileSync(path.join(phaseDir, "ryze.md"), "long content body");
+    const state = createInitialChatState({
+      sessionDir,
+      feature: "open-workers",
+      currentPhase: "discuss",
+    });
+
+    const result = await executeChatCommand(state, {
+      type: "open",
+      target: "workers",
+    });
+
+    expect(result.state.detail).toContain("# workers index");
+    expect(result.state.detail).toContain("- ryze.md");
+    expect(result.state.detail).not.toContain("long content body");
+  });
+
   it("emits live worker and synthesis progress messages during a phase run", async () => {
     const sessionDir = createPhaseSession("chat progress");
     const state = createInitialChatState({
