@@ -289,6 +289,22 @@ export async function executeChatCommand(
   opts: ChatRuntimeOptions = {},
 ): Promise<ChatCommandExecution> {
   if (command.type === "phase") {
+    // Refuse direct /phase calls while autopilot is in flight: the
+    // loop tracks currentPhase to compute the next step on /gate
+    // proceed, and an out-of-band phase jump silently breaks that
+    // sequence. Users must /gate abort first if they want manual
+    // control.
+    if (state.autopilot) {
+      return {
+        state,
+        messages: [
+          {
+            type: "error",
+            text: "autopilot is running; /gate abort to stop it before running /phase",
+          },
+        ],
+      };
+    }
     const phaseRun = await executeChatPhase(
       state,
       command.phase,

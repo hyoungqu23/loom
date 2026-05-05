@@ -198,6 +198,39 @@ describe("chat/autopilot loop", () => {
     expect(messageTypes).toContain("autopilot-stop");
   });
 
+  it("rejects /phase while autopilot is running", async () => {
+    let state = buildState("autopilot phase guard");
+
+    await captureConsole([], async () => {
+      const start = await executeChatCommand(state, {
+        type: "autopilot",
+        task: "ship it",
+      });
+      state = start.state;
+    });
+    expect(state.autopilot).not.toBe(null);
+
+    const result = await executeChatCommand(state, {
+      type: "phase",
+      phase: "build",
+      task: "side jump",
+    });
+
+    expect(result.state).toBe(state);
+    expect(result.messages).toEqual([
+      expect.objectContaining({
+        type: "error",
+        text: expect.stringContaining("autopilot is running"),
+      }),
+    ]);
+    // The autopilot loop should still be parked on the same phase
+    // it landed on at /autopilot start (discuss).
+    expect(result.state.run).toEqual({
+      status: "waiting-for-gate",
+      phase: "discuss",
+    });
+  });
+
   it("rejects /autopilot when one is already in flight", async () => {
     let state = buildState("autopilot conflict");
 
