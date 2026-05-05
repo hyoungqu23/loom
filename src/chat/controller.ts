@@ -1,6 +1,7 @@
 import { parseChatInput } from "./commands";
 import { executeChatCommand } from "./runtime";
-import { ChatState } from "./state";
+import { ChatState, chatReducer } from "./state";
+import { buildPhaseDetail } from "./detail";
 import {
   appendParsedInputToTranscript,
   appendRuntimeMessagesToTranscript,
@@ -44,8 +45,17 @@ export async function handleChatInput(
         }
       : {},
   );
+  let nextState = execution.state;
+  if (execution.phaseResult) {
+    const detail = buildPhaseDetail(
+      nextState.sessionDir,
+      execution.phaseResult.phase,
+      execution.phaseResult.workers,
+    );
+    nextState = chatReducer(nextState, { type: "set-detail", detail });
+  }
   return {
-    state: execution.state,
+    state: nextState,
     transcript:
       opts.onTranscript
         ? liveTranscript

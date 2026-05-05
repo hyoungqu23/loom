@@ -34,7 +34,8 @@ export async function startChat(opts: StartChatOptions = {}): Promise<void> {
     modules.React.createElement(ChatApp, {
       state: chatState,
       messages: [{ type: "system", text: messageText }],
-      detail: "Synthesis will appear here after a phase run.",
+      detail:
+        chatState.detail || "Synthesis will appear here after a phase run.",
       input: "",
     }),
   );
