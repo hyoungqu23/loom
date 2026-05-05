@@ -39,8 +39,8 @@ describe("chat/start", () => {
 
     expect(render).toHaveBeenCalledTimes(1);
     const [element] = render.mock.calls[0];
-    expect(element.props.state.feature).toBe("alpha");
-    expect(element.props.messages[0]).toEqual({
+    expect(element.props.initialState.feature).toBe("alpha");
+    expect(element.props.initialTranscript[0]).toEqual({
       type: "system",
       text: "session opened: alpha",
     });
@@ -62,7 +62,9 @@ describe("chat/start", () => {
     });
 
     const [element] = render.mock.calls[0];
-    expect(element.props.state.feature).toBe("new-feature");
-    expect(element.props.messages[0].text).toBe("session created: new-feature");
+    expect(element.props.initialState.feature).toBe("new-feature");
+    expect(element.props.initialTranscript[0].text).toBe(
+      "session created: new-feature",
+    );
   });
 });
